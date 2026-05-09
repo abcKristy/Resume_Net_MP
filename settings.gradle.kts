@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "resume_net"
+rootProject.name = "ResumeAnalyzer"
 include(":app")
- 
