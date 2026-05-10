@@ -1,9 +1,7 @@
 package com.example.resume_net.data.repository
 
 import android.content.Context
-import com.example.resume_net.data.mapper.toProbs
-import com.example.resume_net.data.mapper.toScore
-import com.example.resume_net.data.mapper.toTensor
+import com.example.resume_net.data.ml.PyTorchModelFacade
 import com.example.resume_net.data.tokenizer.BertTokenizer
 import com.example.resume_net.domain.model.AnalysisError
 import com.example.resume_net.domain.model.AnalysisIssue
@@ -14,9 +12,6 @@ import com.example.resume_net.domain.repository.ResumeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import org.pytorch.IValue
-import org.pytorch.Module
-import java.io.File
 import java.io.FileNotFoundException
 
 class ResumeRepositoryImpl(
@@ -25,29 +20,21 @@ class ResumeRepositoryImpl(
     private val modelDownloader: ModelDownloader
 ) : ResumeRepository {
 
-    private var module: Module? = null
+    private var modelFacade: PyTorchModelFacade? = null
     private var recommendations: Map<String, String> = emptyMap()
+    private var tags: List<String> = emptyList()
     private var thresholds = Thresholds(critical = 0.5f, warning = 0.3f)
 
-    override suspend fun analyze(resumeText: String): Result<AnalysisResult> {
+    override suspend fun analyze(resume: String): Result<AnalysisResult> {
         return withContext(Dispatchers.Default) {
             try {
-                ensureModelLoaded()
+                val facade = requireModelLoaded()
                 ensureTokenizerLoaded()
-                loadRecommendations()
-                loadThresholds()
+                loadMetadata()
 
-                val (inputIds, attentionMask) = tokenizer.tokenize(resumeText)
-                val inputTensor = inputIds.toTensor()
-                val maskTensor = attentionMask.toTensor()
+                val (inputIds, attentionMask) = tokenizer.tokenize(resume)
+                val (score, probs) = facade.predict(inputIds, attentionMask)
 
-                val result = module!!.forward(
-                    IValue.from(inputTensor),
-                    IValue.from(maskTensor)
-                )
-
-                val score = result.toScore()
-                val probs = result.toProbs()
                 val allTags = buildIssues(probs)
 
                 Result.success(
@@ -59,10 +46,13 @@ class ResumeRepositoryImpl(
                     )
                 )
             } catch (e: FileNotFoundException) {
+                android.util.Log.e("RESUME_ANALYZER", "ModelNotAvailable", e)
                 Result.failure(AnalysisError.ModelNotAvailable)
             } catch (e: IllegalStateException) {
+                android.util.Log.e("RESUME_ANALYZER", "TokenizerError", e)
                 Result.failure(AnalysisError.TokenizerError(e.message ?: "Tokenization failed"))
             } catch (e: Exception) {
+                android.util.Log.e("RESUME_ANALYZER", "InferenceError", e)
                 Result.failure(AnalysisError.InferenceError(e.message ?: "Inference failed"))
             }
         }
@@ -70,48 +60,59 @@ class ResumeRepositoryImpl(
 
     suspend fun loadModel() {
         withContext(Dispatchers.IO) {
-            val modelPath = modelDownloader.getModelPath()
-            module = Module.load(modelPath)
+            try {
+                val modelPath = modelDownloader.getModelPath()
+                android.util.Log.d("RESUME_ANALYZER", "Model path: $modelPath")
+                val facade = PyTorchModelFacade(modelPath)
+                facade.load()
+                modelFacade = facade
+                android.util.Log.d("RESUME_ANALYZER", "Model loaded successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("RESUME_ANALYZER", "Failed to load model", e)
+                throw e
+            }
         }
     }
 
-    private fun ensureModelLoaded() {
-        if (module == null) {
-            throw FileNotFoundException("Model not loaded. Call loadModel() first.")
-        }
+    private fun requireModelLoaded(): PyTorchModelFacade {
+        return modelFacade ?: throw FileNotFoundException("Model not loaded. Call loadModel() first.")
     }
 
     private fun ensureTokenizerLoaded() {
         tokenizer.load()
     }
 
-    private fun loadRecommendations() {
-        if (recommendations.isNotEmpty()) return
-        val json = context.assets.open("ml/recommendations.json")
-            .bufferedReader()
-            .readText()
-        recommendations = Json.decodeFromString(json)
-    }
+    private fun loadMetadata() {
+        if (recommendations.isNotEmpty() && tags.isNotEmpty()) return
 
-    private fun loadThresholds() {
-        val json = context.assets.open("ml/model_metadata.json")
-            .bufferedReader()
-            .readText()
-        val metadata = Json.decodeFromString<MetadataDto>(json)
+        val json = Json { ignoreUnknownKeys = true }
+
+        try {
+            val recJson = context.assets.open("ml/recommendations.json")
+                .bufferedReader().readText()
+            val recDtos: Map<String, RecommendationDto> = json.decodeFromString(recJson)
+            recommendations = recDtos.mapValues { it.value.recommendation }
+        } catch (e: Exception) {
+            android.util.Log.w("RESUME_ANALYZER", "Failed to load recommendations.json", e)
+        }
+
+        val metaJson = context.assets.open("ml/model_metadata.json")
+            .bufferedReader().readText()
+        val metadata: MetadataDto = json.decodeFromString(metaJson)
+        tags = metadata.labels
         thresholds = Thresholds(
-            critical = metadata.thresholds.critical,
-            warning = metadata.thresholds.warning
+            critical = metadata.threshold_high,
+            warning = metadata.threshold_low
         )
     }
 
     private fun buildIssues(probs: FloatArray): List<AnalysisIssue> {
-        val tags = loadTags()
         return probs.mapIndexed { index, prob ->
             val tagName = tags.getOrElse(index) { "unknown_$index" }
             val resumeTag = try {
                 ResumeTag.valueOf(tagName.uppercase())
             } catch (e: IllegalArgumentException) {
-                ResumeTag.CONTACT_INFO
+                ResumeTag.NO_NUMBERS
             }
             val severity = when {
                 prob >= thresholds.critical -> IssueSeverity.CRITICAL
@@ -127,28 +128,21 @@ class ResumeRepositoryImpl(
         }
     }
 
-    private fun loadTags(): List<String> {
-        val json = context.assets.open("ml/model_metadata.json")
-            .bufferedReader()
-            .readText()
-        return Json.decodeFromString<MetadataDto>(json).tags
-    }
-
-    data class Thresholds(
-        val critical: Float,
-        val warning: Float
-    )
+    data class Thresholds(val critical: Float, val warning: Float)
 
     @kotlinx.serialization.Serializable
     data class MetadataDto(
-        val tags: List<String>,
-        val thresholds: ThresholdsDto,
-        val max_length: Int
+        val labels: List<String>,
+        val threshold_high: Float,
+        val threshold_low: Float,
+        val max_length: Int = 300
     )
 
     @kotlinx.serialization.Serializable
-    data class ThresholdsDto(
-        val critical: Float,
-        val warning: Float
+    data class RecommendationDto(
+        val name: String,
+        val recommendation: String,
+        val category: String = "",
+        val severity: String = ""
     )
 }

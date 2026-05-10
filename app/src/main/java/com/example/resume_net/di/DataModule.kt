@@ -1,5 +1,7 @@
 package com.example.resume_net.di
 
+import com.example.resume_net.data.cache.AnalysisCache
+import com.example.resume_net.data.db.AppDatabase
 import com.example.resume_net.data.repository.ModelDownloader
 import com.example.resume_net.data.repository.ResumeRepositoryImpl
 import com.example.resume_net.data.tokenizer.BertTokenizer
@@ -13,20 +15,11 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val dataModule = module {
-    single<HttpClient> {
-        HttpClient(OkHttp) {
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    isLenient = true
-                })
-            }
-        }
-    }
-
     single { BertTokenizer(androidContext()) }
-
-    single { ModelDownloader(androidContext(), get()) }
+    single { ModelDownloader(androidContext()) }
+    single { AppDatabase.getInstance(androidContext()) }
+    single { get<AppDatabase>().analysisDao() }
+    single { AnalysisCache(get()) }
 
     single<ResumeRepository> {
         ResumeRepositoryImpl(

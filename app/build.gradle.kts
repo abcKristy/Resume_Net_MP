@@ -2,22 +2,20 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.ksp)
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
 }
 
 android {
     namespace = "com.example.resume_net"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.resume_net"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -41,16 +39,7 @@ android {
     }
 }
 
-sqldelight {
-    databases {
-        create("ResumeDatabase") {
-            packageName.set("com.resumeanalyzer.app.db")
-        }
-    }
-}
-
 dependencies {
-
     // Compose
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -58,8 +47,12 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
     implementation(libs.activity.compose)
+
+    // Lifecycle
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
+
+    // Navigation
     implementation(libs.navigation.compose)
 
     // Koin
@@ -69,15 +62,7 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // PyTorch
-    implementation(libs.pytorch.android)
-
-    // SQLDelight
-    implementation(libs.sqldelight.runtime)
-    implementation(libs.sqldelight.coroutines)
-    implementation(libs.sqldelight.android)
-
-    // Ktor (для загрузки модели)
+    // Ktor
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
@@ -86,5 +71,14 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // DateTime
+    implementation(libs.kotlinx.datetime)
+
+    // PyTorch
     implementation(libs.pytorch.android)
+
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 }

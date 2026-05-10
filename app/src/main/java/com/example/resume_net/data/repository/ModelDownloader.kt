@@ -1,40 +1,32 @@
 package com.example.resume_net.data.repository
 
 import android.content.Context
-import io.ktor.client.HttpClient
-import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsChannel
-import io.ktor.utils.io.jvm.javaio.toInputStream
 import java.io.File
+import java.io.FileOutputStream
 
 class ModelDownloader(
-    private val context: Context,
-    private val httpClient: HttpClient
+    private val context: Context
 ) {
     companion object {
-        private const val MODEL_URL = "https://your-server.com/resume_model.pt"
-        private const val MODEL_FILENAME = "resume_model.pt"
+        private const val ASSET_PATH = "ml/resume_model_android_lite.pt"
+        private const val MODEL_FILENAME = "resume_model_android_lite.pt"
     }
 
     suspend fun getModelPath(): String {
         val modelFile = File(context.cacheDir, MODEL_FILENAME)
 
         if (!modelFile.exists()) {
-            downloadModel(modelFile)
+            copyFromAssets(modelFile)
         }
 
         return modelFile.absolutePath
     }
 
-    private suspend fun downloadModel(modelFile: File) {
-        val response = httpClient.get(MODEL_URL)
-        val channel = response.bodyAsChannel()
-        val inputStream = channel.toInputStream()
-
-        modelFile.outputStream().use { output ->
-            inputStream.copyTo(output)
+    private fun copyFromAssets(modelFile: File) {
+        context.assets.open(ASSET_PATH).use { input ->
+            FileOutputStream(modelFile).use { output ->
+                input.copyTo(output)
+            }
         }
-
-        inputStream.close()
     }
 }

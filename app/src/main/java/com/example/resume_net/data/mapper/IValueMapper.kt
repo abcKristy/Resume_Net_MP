@@ -1,19 +1,50 @@
 package com.example.resume_net.data.mapper
 
 import org.pytorch.IValue
-import org.pytorch.Tensor
 
-fun LongArray.toTensor(): Tensor {
-    return Tensor.fromBlob(this, longArrayOf(1, this.size.toLong()))
-}
+/**
+ * Маппинг выходных данных модели PyTorch в Kotlin-объекты.
+ *
+ * Модель возвращает Tuple из двух тензоров:
+ * - outputs[0]: Tensor shape [1, 1] — оценка резюме 1-5
+ * - outputs[1]: Tensor shape [1, 20] — вероятности 20 тегов
+ */
+object IValueMapper {
 
-fun IValue.toScore(): Float {
-    val tensor = this.toTensor()
-    val score = tensor.dataAsFloatArray[0]
-    return score.coerceIn(1f, 5f)
-}
+    /**
+     * Извлекает оценку резюме из выходного IValue.
+     *
+     * @param output IValue от model.forward() — ожидается Tuple
+     * @return оценка от 1.0 до 5.0
+     */
+    fun toScore(output: IValue): Float {
+        // Модель возвращает Tuple, а не одиночный Tensor!
+        val tuple = output.toTuple()
+        val scoreTensor = tuple[0].toTensor()
+        return scoreTensor.dataAsFloatArray[0]
+    }
 
-fun IValue.toProbs(): FloatArray {
-    val tensor = this.toTensor()
-    return tensor.dataAsFloatArray
+    /**
+     * Извлекает вероятности тегов из выходного IValue.
+     *
+     * @param output IValue от model.forward() — ожидается Tuple
+     * @return массив из 20 вероятностей [0, 1]
+     */
+    fun toProbs(output: IValue): FloatArray {
+        val tuple = output.toTuple()
+        val probsTensor = tuple[1].toTensor()
+        return probsTensor.dataAsFloatArray
+    }
+
+    /**
+     * Извлекает полный результат инференса.
+     *
+     * @param output IValue от model.forward()
+     * @return Pair(оценка, вероятности)
+     */
+    fun toResult(output: IValue): Pair<Float, FloatArray> {
+        val score = toScore(output)
+        val probs = toProbs(output)
+        return Pair(score, probs)
+    }
 }
