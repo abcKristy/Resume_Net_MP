@@ -1,0 +1,32 @@
+{
+  "labels": [
+    "no_numbers",
+    "too_much_water",
+    "no_skills",
+    "bad_structure",
+    "no_achievements",
+    "too_short",
+    "bad_grammar",
+    "no_about",
+    "weak_language",
+    "too_vague",
+    "weak_achievements",
+    "low_experience",
+    "no_education",
+    "generic_template",
+    "no_contacts",
+    "too_many_jobs",
+    "bad_formatting",
+    "wrong_tone",
+    "salary_focus",
+    "irrelevant_info"
+  ],
+  "num_labels": 20,
+  "threshold_high": 0.5,
+  "threshold_low": 0.3,
+  "max_length": 300,
+  "score_min": 1.0,
+  "score_max": 5.0,
+  "model_type": "rubert-tiny2",
+  "hidden_size": 312
+}

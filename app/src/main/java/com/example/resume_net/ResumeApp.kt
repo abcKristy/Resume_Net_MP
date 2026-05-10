@@ -1,6 +1,18 @@
-package com.example.resume_net;
+package com.example.resume_net
 
-import android.app.Application;
+import android.app.Application
+import com.example.resume_net.di.appModule
+import com.example.resume_net.di.dataModule
+import com.example.resume_net.di.domainModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
-public class ResumeApp extends Application {
+class ResumeApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@ResumeApp)
+            modules(domainModule, dataModule, appModule)
+        }
+    }
 }

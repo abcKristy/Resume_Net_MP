@@ -78,5 +78,13 @@ dependencies {
     implementation(libs.sqldelight.android)
 
     // Ktor (для загрузки модели)
+    implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.json)
+
+    // Serialization
+    implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.pytorch.android)
 }

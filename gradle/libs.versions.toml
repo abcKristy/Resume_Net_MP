@@ -8,7 +8,7 @@ sqldelight = "2.0.2"
 serialization = "1.8.1"
 datetime = "0.7.1"
 okio = "3.11.0"
-pytorch = "2.0.0"
+pytorch = "2.1.0"
 compose-bom = "2024.02.00"
 compose-compiler = "1.5.9"
 lifecycle = "2.10.0"
@@ -47,7 +47,6 @@ okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 
 # PyTorch
 pytorch-android = { module = "org.pytorch:pytorch_android", version.ref = "pytorch" }
-
 # Compose
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
