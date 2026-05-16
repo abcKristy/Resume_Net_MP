@@ -1,9 +1,5 @@
 package com.example.resume_net.presentation.conversations.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,12 +20,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.resume_net.domain.model.Conversation
 import com.example.resume_net.ui.theme.Resume_netTheme
-import com.example.resume_net.ui.theme.tagScoreHigh
-import com.example.resume_net.ui.theme.tagScoreLow
-import com.example.resume_net.ui.theme.tagScoreMedium
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,40 +35,28 @@ fun ConversationListItem(
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var newTitle by remember { mutableStateOf(conversation.title) }
-    var isDeleting by remember { mutableStateOf(false) }
 
     val iconColor = getColorByScore(conversation.lastScore)
     val formattedDate = formatDate(conversation.lastMessageTimestamp ?: conversation.updatedAt)
+    val scoreText = conversation.lastScore?.let { String.format("%.1f", it) } ?: "—"
 
-    // Анимированное удаление
-    if (isDeleting) {
-        // Элемент будет скрыт с анимацией
-        return
-    }
-
-    SwipeToDeleteBox(
-        onDelete = {
-            isDeleting = true
-            onDelete()
-        },
-        onDismiss = {
-            // После удаления элемент исчезает
-        }
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Card(
-            modifier = modifier
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onClick() },
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                .padding(16.dp)
         ) {
+            // Верхняя строка: иконка + название + меню
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Иконка документа с цветом
                 Icon(
                     imageVector = Icons.Default.Description,
                     contentDescription = "Диалог",
@@ -86,81 +66,85 @@ fun ConversationListItem(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Контент
-                Column(
+                Text(
+                    text = conversation.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
+                )
+
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    Text(
-                        text = conversation.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Действия",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
                     )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = conversation.lastMessagePreview?.take(60) ?: "Нет сообщений",
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Дата и меню
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = formattedDate,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    IconButton(
-                        onClick = { showMenu = true },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Действия",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Переименовать") },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                            onClick = {
-                                showMenu = false
-                                showRenameDialog = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Удалить") },
-                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
-                            onClick = {
-                                showMenu = false
-                                isDeleting = true
-                                onDelete()
-                            }
-                        )
-                    }
                 }
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Превью последнего сообщения
+            Text(
+                text = conversation.lastMessagePreview?.take(60) ?: "Нет сообщений",
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Нижняя строка: оценка + дата
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "⭐ $scoreText",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = iconColor,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+
+    // PopupMenu
+    DropdownMenu(
+        expanded = showMenu,
+        onDismissRequest = { showMenu = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text("Переименовать") },
+            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+            onClick = {
+                showMenu = false
+                showRenameDialog = true
+            }
+        )
+        DropdownMenuItem(
+            text = { Text("Удалить") },
+            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+            onClick = {
+                showMenu = false
+                onDelete()
+            }
+        )
     }
 
     // Диалог переименования
@@ -197,14 +181,13 @@ fun ConversationListItem(
     }
 }
 
-// Функции getColorByScore и formatDate остаются без изменений
 @Composable
 private fun getColorByScore(score: Float?): Color {
     return when {
-        score == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        score >= 4.0f -> MaterialTheme.colorScheme.tagScoreLow
-        score >= 3.0f -> MaterialTheme.colorScheme.tagScoreMedium
-        else -> MaterialTheme.colorScheme.tagScoreHigh
+        score == null -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        score >= 4.0f -> Color(0xFF81C784)
+        score >= 3.0f -> Color(0xFFFFD54F)
+        else -> Color(0xFFE57373)
     }
 }
 
@@ -255,27 +238,11 @@ private fun ConversationListItemPreview() {
                 ConversationListItem(
                     conversation = Conversation(
                         id = 2,
-                        title = "Product Manager CV с очень длинным названием которое должно обрезаться",
+                        title = "Product Manager CV",
                         createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis() - 86400000, // вчера
+                        updatedAt = System.currentTimeMillis() - 86400000,
                         lastMessagePreview = "Много воды, нет конкретных достижений",
                         lastScore = 2.5f
-                    ),
-                    onClick = {},
-                    onRename = {},
-                    onDelete = {}
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                ConversationListItem(
-                    conversation = Conversation(
-                        id = 3,
-                        title = "Без оценки",
-                        createdAt = System.currentTimeMillis(),
-                        updatedAt = System.currentTimeMillis() - 172800000, // 2 дня назад
-                        lastMessagePreview = null,
-                        lastScore = null
                     ),
                     onClick = {},
                     onRename = {},

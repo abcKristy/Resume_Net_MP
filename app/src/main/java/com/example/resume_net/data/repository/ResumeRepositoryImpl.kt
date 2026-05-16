@@ -188,7 +188,7 @@ class ResumeRepositoryImpl(
             val allTags = buildIssues(probs)
 
             val result = AnalysisResult(
-                score = score,
+                score = roundToTwoDecimals(score),
                 issues = allTags.filter { it.severity == IssueSeverity.CRITICAL },
                 warnings = allTags.filter { it.severity == IssueSeverity.WARNING },
                 allTags = allTags
@@ -290,4 +290,8 @@ class ResumeRepositoryImpl(
         val category: String = "",
         val severity: String = ""
     )
+}
+
+private fun roundToTwoDecimals(value: Float): Float {
+    return (value * 100).toInt() / 100.0f
 }
