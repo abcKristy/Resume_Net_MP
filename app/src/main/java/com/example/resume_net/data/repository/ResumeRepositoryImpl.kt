@@ -1,6 +1,7 @@
 package com.example.resume_net.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.example.resume_net.data.ml.PyTorchModelFacade
 import com.example.resume_net.data.tokenizer.BertTokenizer
 import com.example.resume_net.domain.model.AnalysisError
@@ -13,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.FileNotFoundException
+import kotlinx.coroutines.delay
 
 class ResumeRepositoryImpl(
     private val context: Context,
@@ -25,9 +27,26 @@ class ResumeRepositoryImpl(
     private var tags: List<String> = emptyList()
     private var thresholds = Thresholds(critical = 0.5f, warning = 0.3f)
 
+    private var isModelLoaded = false
+    private var isLoadingModel = false
+
     override suspend fun analyze(resume: String): Result<AnalysisResult> {
         return withContext(Dispatchers.Default) {
             try {
+                if (!isModelLoaded && !isLoadingModel) {
+                    loadModel()
+                }
+
+                var attempts = 0
+                while (!isModelLoaded && attempts < 50) {
+                    delay(100)
+                    attempts++
+                }
+
+                if (!isModelLoaded) {
+                    return@withContext Result.failure(AnalysisError.ModelNotAvailable)
+                }
+
                 val facade = requireModelLoaded()
                 ensureTokenizerLoaded()
                 loadMetadata()
@@ -46,33 +65,62 @@ class ResumeRepositoryImpl(
                     )
                 )
             } catch (e: FileNotFoundException) {
-                android.util.Log.e("RESUME_ANALYZER", "ModelNotAvailable", e)
+                Log.e("RESUME_ANALYZER", "ModelNotAvailable", e)
                 Result.failure(AnalysisError.ModelNotAvailable)
             } catch (e: IllegalStateException) {
-                android.util.Log.e("RESUME_ANALYZER", "TokenizerError", e)
+                Log.e("RESUME_ANALYZER", "TokenizerError", e)
                 Result.failure(AnalysisError.TokenizerError(e.message ?: "Tokenization failed"))
             } catch (e: Exception) {
-                android.util.Log.e("RESUME_ANALYZER", "InferenceError", e)
+                Log.e("RESUME_ANALYZER", "InferenceError", e)
                 Result.failure(AnalysisError.InferenceError(e.message ?: "Inference failed"))
             }
         }
     }
 
     suspend fun loadModel() {
+        if (isModelLoaded || isLoadingModel) return
+
+        isLoadingModel = true
         withContext(Dispatchers.IO) {
             try {
                 val modelPath = modelDownloader.getModelPath()
-                android.util.Log.d("RESUME_ANALYZER", "Model path: $modelPath")
+                Log.d("RESUME_ANALYZER", "Loading model from: $modelPath")
                 val facade = PyTorchModelFacade(modelPath)
                 facade.load()
                 modelFacade = facade
-                android.util.Log.d("RESUME_ANALYZER", "Model loaded successfully")
+                isModelLoaded = true
+                Log.d("RESUME_ANALYZER", "Model loaded successfully")
             } catch (e: Exception) {
-                android.util.Log.e("RESUME_ANALYZER", "Failed to load model", e)
+                Log.e("RESUME_ANALYZER", "Failed to load model", e)
                 throw e
+            } finally {
+                isLoadingModel = false
             }
         }
     }
+
+    /**
+     * Освобождает ресурсы модели.
+     * Вызывается при нехватке памяти или когда приложение уходит в фон.
+     */
+    fun releaseModel() {
+        if (!isModelLoaded) return
+
+        Log.d("RESUME_ANALYZER", "Releasing model resources")
+        modelFacade?.close()
+        modelFacade = null
+        isModelLoaded = false
+
+        recommendations = emptyMap()
+        tags = emptyList()
+
+        Log.d("RESUME_ANALYZER", "Model resources released successfully")
+    }
+
+    /**
+     * Проверяет, загружена ли модель
+     */
+    fun isModelReady(): Boolean = isModelLoaded
 
     private fun requireModelLoaded(): PyTorchModelFacade {
         return modelFacade ?: throw FileNotFoundException("Model not loaded. Call loadModel() first.")
@@ -93,17 +141,22 @@ class ResumeRepositoryImpl(
             val recDtos: Map<String, RecommendationDto> = json.decodeFromString(recJson)
             recommendations = recDtos.mapValues { it.value.recommendation }
         } catch (e: Exception) {
-            android.util.Log.w("RESUME_ANALYZER", "Failed to load recommendations.json", e)
+            Log.w("RESUME_ANALYZER", "Failed to load recommendations.json", e)
         }
 
-        val metaJson = context.assets.open("ml/model_metadata.json")
-            .bufferedReader().readText()
-        val metadata: MetadataDto = json.decodeFromString(metaJson)
-        tags = metadata.labels
-        thresholds = Thresholds(
-            critical = metadata.threshold_high,
-            warning = metadata.threshold_low
-        )
+        try {
+            val metaJson = context.assets.open("ml/model_metadata.json")
+                .bufferedReader().readText()
+            val metadata: MetadataDto = json.decodeFromString(metaJson)
+            tags = metadata.labels
+            thresholds = Thresholds(
+                critical = metadata.threshold_high,
+                warning = metadata.threshold_low
+            )
+        } catch (e: Exception) {
+            Log.e("RESUME_ANALYZER", "Failed to load metadata.json", e)
+            throw e
+        }
     }
 
     private fun buildIssues(probs: FloatArray): List<AnalysisIssue> {
