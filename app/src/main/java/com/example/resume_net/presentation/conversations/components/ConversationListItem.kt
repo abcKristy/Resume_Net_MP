@@ -24,6 +24,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.resume_net.domain.model.Conversation
 import com.example.resume_net.ui.theme.Resume_netTheme
+import com.example.resume_net.ui.theme.tagScoreHigh
+import com.example.resume_net.ui.theme.tagScoreLow
+import com.example.resume_net.ui.theme.tagScoreMedium
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
@@ -199,9 +202,9 @@ fun ConversationListItem(
 private fun getColorByScore(score: Float?): Color {
     return when {
         score == null -> MaterialTheme.colorScheme.onSurfaceVariant
-        score >= 4.0f -> Color(0xFF4CAF50)
-        score >= 3.0f -> Color(0xFFFFC107)
-        else -> Color(0xFFF44336)
+        score >= 4.0f -> MaterialTheme.colorScheme.tagScoreLow
+        score >= 3.0f -> MaterialTheme.colorScheme.tagScoreMedium
+        else -> MaterialTheme.colorScheme.tagScoreHigh
     }
 }
 

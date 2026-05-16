@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.resume_net.presentation.chat.ChatScreen
 import com.example.resume_net.presentation.conversations.ConversationsListScreen
 import com.example.resume_net.presentation.newanalysis.NewAnalysisScreen  // будет создан
 
@@ -50,11 +51,10 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val conversationId = backStackEntry.arguments?.getLong("conversationId") ?: 0L
-            // TODO: ChatAnalysisScreen
-            // ChatAnalysisScreen(
-            //     conversationId = conversationId,
-            //     onNavigateBack = { navController.popBackStack() }
-            // )
+            ChatScreen(
+                conversationId = conversationId,
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
     }
 }

@@ -16,6 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.resume_net.domain.model.AnalysisIssue
+import com.example.resume_net.ui.theme.tagScoreHigh
+import com.example.resume_net.ui.theme.tagScoreLow
+import com.example.resume_net.ui.theme.tagScoreMedium
 
 /**
  * Компонент для отображения одного тега с прогресс-баром
@@ -31,9 +34,9 @@ fun TagItem(
 ) {
     val progress = issue.probability
     val barColor = when {
-        progress > 0.6f -> Color(0xFFF44336)   // Красный
-        progress > 0.3f -> Color(0xFFFFC107)   // Желтый
-        else -> Color(0xFF4CAF50)              // Зеленый
+        progress > 0.6f -> MaterialTheme.colorScheme.tagScoreHigh
+        progress > 0.3f -> MaterialTheme.colorScheme.tagScoreMedium
+        else -> MaterialTheme.colorScheme.tagScoreLow
     }
 
     Row(

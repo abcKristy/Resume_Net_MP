@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.resume_net.ui.theme.tagScoreHigh
+import com.example.resume_net.ui.theme.tagScoreLow
+import com.example.resume_net.ui.theme.tagScoreMedium
 
 /**
  * Компонент для отображения оценки резюме
@@ -26,9 +29,9 @@ fun ScoreChip(
     modifier: Modifier = Modifier
 ) {
     val (backgroundColor, textColor) = when {
-        score >= 4.0f -> Color(0xFF4CAF50) to Color.White      // Зеленый
-        score >= 3.0f -> Color(0xFFFFC107) to Color.Black      // Желтый
-        else -> Color(0xFFF44336) to Color.White               // Красный
+        score >= 4.0f -> MaterialTheme.colorScheme.tagScoreLow to Color.White
+        score >= 3.0f -> MaterialTheme.colorScheme.tagScoreMedium to Color.Black
+        else -> MaterialTheme.colorScheme.tagScoreHigh to Color.White            // Красный
     }
 
     Surface(
