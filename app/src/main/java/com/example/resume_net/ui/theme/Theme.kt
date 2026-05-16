@@ -19,14 +19,15 @@ private val DarkColorScheme = darkColorScheme(
 
     secondary = SecondaryDark,
     onSecondary = OnSecondaryDark,
-    secondaryContainer = SecondaryContainerDark,
-    onSecondaryContainer = OnSecondaryContainerDark,
 
     background = BackgroundDark,
     onBackground = OnBackgroundDark,
 
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
+
+    surfaceVariant = SurfaceDark,
+    onSurfaceVariant = OnSurfaceDark,
 
     error = ErrorDark,
     onError = OnErrorDark,
@@ -42,8 +43,6 @@ private val LightColorScheme = lightColorScheme(
 
     secondary = SecondaryLight,
     onSecondary = OnSecondaryLight,
-    secondaryContainer = SecondaryContainerLight,
-    onSecondaryContainer = OnSecondaryContainerLight,
 
     background = BackgroundLight,
     onBackground = OnBackgroundLight,
@@ -51,19 +50,19 @@ private val LightColorScheme = lightColorScheme(
     surface = SurfaceLight,
     onSurface = OnSurfaceLight,
 
+    surfaceVariant = SurfaceVariantLight,
+    onSurfaceVariant = OnSurfaceLight,
+
     error = ErrorLight,
     onError = OnErrorLight,
     errorContainer = ErrorContainerLight,
-    onErrorContainer = OnErrorContainerLight,
-
-    // Кастомные расширения (доступны через MaterialTheme.colorScheme)
-    // Для этого нужно создать extension property
+    onErrorContainer = OnErrorContainerLight
 )
 
 @Composable
 fun Resume_netTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

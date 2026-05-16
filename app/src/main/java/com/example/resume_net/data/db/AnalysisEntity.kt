@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "analysis_history",
     indices = [
-        Index(value = ["resume_text_hash"], name = "idx_analysis_hash")  // ← НОВЫЙ индекс
+        Index(value = ["resume_text_hash"], name = "idx_analysis_hash")
     ]
 )
 data class AnalysisEntity(
@@ -18,7 +18,7 @@ data class AnalysisEntity(
     @ColumnInfo(name = "resume_text")
     val resumeText: String,
 
-    @ColumnInfo(name = "resume_text_hash")
+    @ColumnInfo(name = "resume_text_hash", defaultValue = "")
     val resumeTextHash: String? = null,
 
     @ColumnInfo(name = "score")

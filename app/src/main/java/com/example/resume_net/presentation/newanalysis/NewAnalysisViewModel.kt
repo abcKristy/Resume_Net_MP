@@ -62,13 +62,9 @@ class NewAnalysisViewModel(
         }
     }
 
-    /**
-     * Запуск анализа
-     */
     private fun analyze() {
         val currentText = _state.value.resumeText
 
-        // Проверка длины текста
         if (currentText.length < MIN_TEXT_LENGTH) {
             _effect.tryEmit(NewAnalysisEffect.ShowError(
                 "Минимум $MIN_TEXT_LENGTH символов для анализа. Сейчас: ${currentText.length}"
@@ -82,37 +78,16 @@ class NewAnalysisViewModel(
             try {
                 val params = CreateConversationUseCase.Params(
                     resumeText = currentText,
-                    useCache = true
+                    useCache = false  // ← временно отключаем кэш для отладки
                 )
                 val result = createConversationUseCase(params)
 
-                // Проверка на дубликат (если conversationId == -1, значит результат из кэша)
-                if (result.fromCache && result.conversationId == -1L) {
-                    // Нужно найти существующий диалог с таким же текстом
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            showDuplicateDialog = true,
-                            duplicateConversationId = result.conversationId.takeIf { it != -1L }
-                        )
-                    }
-                } else {
-                    _state.update { it.copy(isLoading = false) }
-                    _effect.emit(NewAnalysisEffect.NavigateToChat(result.conversationId))
-                }
+                _state.update { it.copy(isLoading = false) }
+                _effect.emit(NewAnalysisEffect.NavigateToChat(result.conversationId))
 
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
-
-                // Обработка ошибки загрузки модели
-                when (e) {
-                    is AnalysisError.ModelNotAvailable -> {
-                        _state.update { it.copy(showModelLoadingDialog = true) }
-                    }
-                    else -> {
-                        _effect.emit(NewAnalysisEffect.ShowError(e.message ?: "Ошибка анализа"))
-                    }
-                }
+                _effect.emit(NewAnalysisEffect.ShowError(e.message ?: "Ошибка анализа"))
             }
         }
     }

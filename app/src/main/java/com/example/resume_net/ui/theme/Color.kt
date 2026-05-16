@@ -1,66 +1,63 @@
-// Color.kt - полностью обновленный файл
-
 package com.example.resume_net.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Основные акцентные цвета (ваши)
-val AccentLight = Color(0xFFB2CBE6)  // Светлый акцент
-val AccentDark = Color(0xFF42262A)   // Темный акцент
+// Ваши основные цвета
+val AccentLight = Color(0xFFB2CBE6)  // Светлый акцент (основной фон)
+val AccentDark = Color(0xFF42262A)   // Темный акцент (текст, акценты)
 
 // Light Theme цвета
-val PrimaryLight = AccentLight
-val OnPrimaryLight = Color(0xFF1A1A1A)  // Темный текст на светлом фоне
-val PrimaryContainerLight = Color(0xFFD9E8F5)  // Светлый контейнер
-val OnPrimaryContainerLight = Color(0xFF001D35)
+val PrimaryLight = AccentDark        // Темный как основной акцент
+val OnPrimaryLight = AccentLight     // Светлый текст на темном фоне
+val PrimaryContainerLight = AccentLight
+val OnPrimaryContainerLight = AccentDark
 
-val SecondaryLight = AccentDark
-val OnSecondaryLight = Color(0xFFFFFFFF)  // Белый текст на темном
-val SecondaryContainerLight = Color(0xFFFFDAD6)
-val OnSecondaryContainerLight = Color(0xFF410000)
+val SecondaryLight = AccentLight
+val OnSecondaryLight = AccentDark
 
-val BackgroundLight = Color(0xFFF8F9FA)  // Очень светлый фон
-val SurfaceLight = Color(0xFFFFFFFF)      // Белая поверхность
-val OnBackgroundLight = Color(0xFF1A1A1A)
-val OnSurfaceLight = Color(0xFF1A1A1A)
+// ФОН - используем светлый акцент
+val BackgroundLight = AccentLight     // ← Весь фон будет #B2CBE6
+val SurfaceLight = AccentLight.copy(alpha = 0.7f)  // Слегка прозрачный для карточек
+val OnBackgroundLight = AccentDark    // ← Текст темный #42262A
+val OnSurfaceLight = AccentDark
 
-val ErrorLight = Color(0xFFBA1A1A)
+val SurfaceVariantLight = AccentDark.copy(alpha = 0.1f)  // Легкий темный оттенок
+
+val ErrorLight = Color(0xFFD32F2F)
 val OnErrorLight = Color(0xFFFFFFFF)
-val ErrorContainerLight = Color(0xFFFFDAD6)
-val OnErrorContainerLight = Color(0xFF410002)
+val ErrorContainerLight = Color(0xFFFFEBEE)
+val OnErrorContainerLight = Color(0xFFB71C1C)
 
-val SuccessLight = Color(0xFF006E2E)
-val WarningLight = Color(0xFFB25C00)
+val SuccessLight = Color(0xFF2E7D32)
+val WarningLight = Color(0xFFFFA000)
 
 // Dark Theme цвета
 val PrimaryDark = AccentLight
-val OnPrimaryDark = Color(0xFF001D35)
-val PrimaryContainerDark = Color(0xFF004D81)
-val OnPrimaryContainerDark = Color(0xFFCBE6FF)
+val OnPrimaryDark = AccentDark
+val PrimaryContainerDark = AccentDark
+val OnPrimaryContainerDark = AccentLight
 
 val SecondaryDark = AccentDark
-val OnSecondaryDark = Color(0xFFFFFFFF)
-val SecondaryContainerDark = Color(0xFF5D3A3E)
-val OnSecondaryContainerDark = Color(0xFFFFDAD6)
+val OnSecondaryDark = AccentLight
 
-val BackgroundDark = Color(0xFF0D0D0D)
-val SurfaceDark = Color(0xFF1A1A1A)
-val OnBackgroundDark = Color(0xFFE3E3E3)
-val OnSurfaceDark = Color(0xFFE3E3E3)
+val BackgroundDark = AccentDark
+val SurfaceDark = AccentDark.copy(alpha = 0.8f)
+val OnBackgroundDark = AccentLight
+val OnSurfaceDark = AccentLight
 
-val ErrorDark = Color(0xFFFFB4AB)
-val OnErrorDark = Color(0xFF690005)
-val ErrorContainerDark = Color(0xFF93000A)
-val OnErrorContainerDark = Color(0xFFFFDAD6)
+val ErrorDark = Color(0xFFEF5350)
+val OnErrorDark = Color(0xFFB71C1C)
+val ErrorContainerDark = Color(0xFF4A0000)
+val OnErrorContainerDark = Color(0xFFFFCDD2)
 
-val SuccessDark = Color(0xFF55B87C)
-val WarningDark = Color(0xFFFFB45E)
+val SuccessDark = Color(0xFF66BB6A)
+val WarningDark = Color(0xFFFFD54F)
 
-// Цвета для прогресс-баров тегов (из ТЗ)
-val TagScoreHigh = Color(0xFFF44336)   // Красный 60-100%
-val TagScoreMedium = Color(0xFFFFC107) // Желтый 30-60%
-val TagScoreLow = Color(0xFF4CAF50)    // Зеленый 0-30%
+// Цвета для прогресс-баров тегов
+val TagScoreHigh = Color(0xFFD32F2F)   // Красный 60-100% (ярче)
+val TagScoreMedium = Color(0xFFFFA000) // Желтый 30-60% (ярче)
+val TagScoreLow = Color(0xFF2E7D32)    // Зеленый 0-30% (темнее для контраста)
 
-// Дополнительные системные цвета
-val DividerLight = Color(0xFFE0E0E0)
-val DividerDark = Color(0xFF333333)
+// Дополнительные цвета
+val DividerLight = AccentDark.copy(alpha = 0.2f)
+val DividerDark = AccentLight.copy(alpha = 0.2f)

@@ -1,5 +1,6 @@
 package com.example.resume_net.data.repository
 
+import android.util.Log
 import com.example.resume_net.data.db.ConversationDao
 import com.example.resume_net.data.db.MessageDao
 import com.example.resume_net.data.db.MessageRole
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.security.MessageDigest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 class ConversationRepositoryImpl(
     private val conversationDao: ConversationDao,
@@ -51,33 +54,42 @@ class ConversationRepositoryImpl(
         resumeText: String,
         analysisResult: AnalysisResult
     ): Long = withContext(Dispatchers.IO) {
-        // 1. Создаём диалог
-        val title = generateTitle(resumeText)
-        val hash = hashText(resumeText)
-        val conversationEntity = ConversationMapper.newEntity(
-            title = title,
-            resumeTextHash = hash
-        )
+        try {
+            Log.d("ConversationRepo", "=== createConversation START ===")
+            Log.d("ConversationRepo", "resumeText length: ${resumeText.length}")
+            Log.d("ConversationRepo", "analysisResult score: ${analysisResult.score}")
 
-        val conversationId = conversationDao.insert(conversationEntity)
+            val title = generateTitle(resumeText)
+            Log.d("ConversationRepo", "Generated title: $title")
 
-        // 2. Добавляем сообщение пользователя
-        val userMessage = MessageMapper.newUserMessage(
-            conversationId = conversationId,
-            text = resumeText
-        )
-        val userEntity = MessageMapper.toUserEntity(conversationId, userMessage)
-        messageDao.insert(userEntity)
+            val conversationEntity = ConversationMapper.newEntity(title = title)
+            val conversationId = conversationDao.insert(conversationEntity)
+            Log.d("ConversationRepo", "Conversation inserted with ID: $conversationId")
 
-        // 3. Добавляем сообщение ассистента
-        val assistantMessage = MessageMapper.newAssistantMessage(
-            conversationId = conversationId,
-            analysisResult = analysisResult
-        )
-        val assistantEntity = MessageMapper.toAssistantEntity(conversationId, assistantMessage)
-        messageDao.insert(assistantEntity)
+            // Добавляем сообщение пользователя
+            val userMessage = MessageMapper.newUserMessage(
+                conversationId = conversationId,
+                text = resumeText
+            )
+            val userEntity = MessageMapper.toUserEntity(conversationId, userMessage)
+            val userMessageId = messageDao.insert(userEntity)
+            Log.d("ConversationRepo", "User message inserted with ID: $userMessageId")
 
-        return@withContext conversationId
+            // Добавляем сообщение ассистента
+            val assistantMessage = MessageMapper.newAssistantMessage(
+                conversationId = conversationId,
+                analysisResult = analysisResult
+            )
+            val assistantEntity = MessageMapper.toAssistantEntity(conversationId, assistantMessage)
+            val assistantMessageId = messageDao.insert(assistantEntity)
+            Log.d("ConversationRepo", "Assistant message inserted with ID: $assistantMessageId")
+
+            Log.d("ConversationRepo", "=== createConversation SUCCESS ===")
+            return@withContext conversationId
+        } catch (e: Exception) {
+            Log.e("ConversationRepo", "Failed to create conversation", e)
+            throw e
+        }
     }
 
     override suspend fun getConversations(
@@ -93,13 +105,17 @@ class ConversationRepositoryImpl(
     }
 
     override fun observeConversations(): Flow<List<Conversation>> {
-        return conversationDao.getAllOrdered().map { entities ->
-            // Для Flow загружаем последние сообщения (может быть неоптимально для больших списков)
-            entities.mapNotNull { entity ->
-                val lastMessage = runBlockingOrNull { messageDao.getLastMessage(entity.id) }
-                ConversationMapper.toDomain(entity, lastMessage)
+        return flow {
+            conversationDao.getAllOrdered().collect { entities ->
+                val conversations = mutableListOf<Conversation>()
+                for (entity in entities) {
+                    val lastMessage = messageDao.getLastMessage(entity.id)
+                    val conversation = ConversationMapper.toDomain(entity, lastMessage)
+                    conversations.add(conversation)
+                }
+                emit(conversations)
             }
-        }
+        }.flowOn(Dispatchers.IO)
     }
 
     override suspend fun getConversationById(id: Long): Conversation? = withContext(Dispatchers.IO) {

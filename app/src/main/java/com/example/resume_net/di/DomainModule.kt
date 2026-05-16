@@ -6,8 +6,6 @@ import com.example.resume_net.domain.usecase.AnalyzeResumeUseCase
 import com.example.resume_net.domain.usecase.CreateConversationUseCase
 import com.example.resume_net.domain.usecase.DeleteConversationUseCase
 import com.example.resume_net.domain.usecase.GetConversationsUseCase
-import com.example.resume_net.presentation.conversations.ConversationListViewModel
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val domainModule = module {
@@ -33,12 +31,6 @@ val domainModule = module {
 
     factory { AnalyzeAndAddToConversationUseCase(
         analyzeResumeUseCase = get(),
-        conversationRepository = get()
-    ) }
-
-    viewModel { ConversationListViewModel(
-        getConversationsUseCase = get(),
-        deleteConversationUseCase = get(),
         conversationRepository = get()
     ) }
 }

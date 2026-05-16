@@ -1,5 +1,6 @@
 package com.example.resume_net.presentation.conversations
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.resume_net.domain.model.Conversation
@@ -37,16 +38,20 @@ class ConversationListViewModel(
      */
     private fun observeConversations() {
         viewModelScope.launch {
+            Log.d("ConversationListVM", "Starting observeConversations")
             getConversationsUseCase.observe()
                 .catch { error ->
+                    Log.e("ConversationListVM", "Error: ${error.message}")
                     _state.update { it.copy(error = error.message) }
                     _effect.emit(ConversationListEffect.ShowError(error.message ?: "Ошибка загрузки"))
                 }
                 .collect { conversations ->
+                    Log.d("ConversationListVM", "Collected ${conversations.size} conversations")
                     allConversations = conversations
                     updateFilteredList()
                     _state.update { currentState ->
                         currentState.copy(
+                            conversations = conversations,
                             isLoading = false,
                             isRefreshing = false
                         )
@@ -96,7 +101,10 @@ class ConversationListViewModel(
                 val conversations = getConversationsUseCase()
                 allConversations = conversations
                 updateFilteredList()
-                _state.update { it.copy(isRefreshing = false) }
+                _state.update { it.copy(
+                    conversations = conversations,
+                    isRefreshing = false
+                ) }
             } catch (e: Exception) {
                 _state.update { it.copy(isRefreshing = false, error = e.message) }
                 _effect.emit(ConversationListEffect.ShowError(e.message ?: "Ошибка загрузки"))
