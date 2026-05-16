@@ -5,9 +5,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [AnalysisEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        AnalysisEntity::class,
+        ConversationEntity::class,
+        MessageEntity::class
+    ],
+    version = 2,
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun analysisDao(): AnalysisDao
+    abstract fun conversationDao(): ConversationDao
+    abstract fun messageDao(): MessageDao
 
     companion object {
         @Volatile
@@ -19,7 +30,10 @@ abstract class AppDatabase : RoomDatabase() {
                     context,
                     AppDatabase::class.java,
                     "resume.db"
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration()  // ВНИМАНИЕ: удалит старые данные!
+                    .build()
+                    .also { INSTANCE = it }
             }
         }
     }
