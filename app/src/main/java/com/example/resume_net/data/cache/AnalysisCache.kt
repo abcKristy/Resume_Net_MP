@@ -13,17 +13,52 @@ import kotlinx.serialization.json.Json
 class AnalysisCache(
     private val dao: AnalysisDao
 ) {
-    suspend fun saveResult(resumeText: String, result: AnalysisResult) {
+
+    companion object {
+        private const val CACHE_TTL_DAYS = 30L // Время жизни кэша 30 дней
+    }
+
+    /**
+     * Сохранение результата анализа в кэш
+     * @param textHash хеш текста резюме
+     * @param resumeText оригинальный текст
+     * @param result результат анализа
+     */
+    suspend fun saveResult(textHash: String, resumeText: String, result: AnalysisResult) {
         val dto = CachedResultDto.fromDomain(result)
         val json = Json.encodeToString(dto)
         dao.insert(
             AnalysisEntity(
                 resumeText = resumeText,
+                resumeTextHash = textHash,  // ← НОВОЕ поле (нужно добавить в AnalysisEntity)
                 score = result.score,
                 issuesJson = json,
                 createdAt = Clock.System.now().toEpochMilliseconds()
             )
         )
+    }
+
+    /**
+     * Получение результата из кэша по хешу текста
+     * @param textHash хеш текста резюме
+     * @return результат анализа или null если не найден или устарел
+     */
+    suspend fun getByHash(textHash: String): AnalysisResult? {
+        val entity = dao.findByHash(textHash) ?: return null
+
+        // Проверка на устаревание кэша (опционально)
+        val now = Clock.System.now().toEpochMilliseconds()
+        val cacheAge = now - entity.createdAt
+        val maxAge = CACHE_TTL_DAYS * 24 * 60 * 60 * 1000L
+
+        if (cacheAge > maxAge) {
+            // Кэш устарел, удаляем
+            dao.deleteById(entity.id)
+            return null
+        }
+
+        val dto: CachedResultDto = Json.decodeFromString(entity.issuesJson)
+        return dto.toDomain()
     }
 
     suspend fun getHistory(): List<Pair<String, AnalysisResult>> {

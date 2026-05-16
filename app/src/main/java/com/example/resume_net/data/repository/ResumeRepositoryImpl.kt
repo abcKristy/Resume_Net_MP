@@ -2,6 +2,7 @@ package com.example.resume_net.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.example.resume_net.data.cache.AnalysisCache
 import com.example.resume_net.data.ml.PyTorchModelFacade
 import com.example.resume_net.data.tokenizer.BertTokenizer
 import com.example.resume_net.domain.model.AnalysisError
@@ -11,87 +12,83 @@ import com.example.resume_net.domain.model.IssueSeverity
 import com.example.resume_net.domain.model.ResumeTag
 import com.example.resume_net.domain.repository.ResumeRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import java.io.FileNotFoundException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import java.io.FileNotFoundException
+import java.security.MessageDigest
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.Json
 
 class ResumeRepositoryImpl(
     private val context: Context,
     private val tokenizer: BertTokenizer,
-    private val modelDownloader: ModelDownloader
+    private val modelDownloader: ModelDownloader,
+    private val analysisCache: AnalysisCache
 ) : ResumeRepository {
+
+    companion object {
+        private const val TAG = "RESUME_ANALYZER"
+        private const val MODEL_LOAD_TIMEOUT_MS = 5000L  // 5 секунд таймаут
+    }
 
     private var modelFacade: PyTorchModelFacade? = null
     private var recommendations: Map<String, String> = emptyMap()
     private var tags: List<String> = emptyList()
     private var thresholds = Thresholds(critical = 0.5f, warning = 0.3f)
 
+    // Флаги состояния модели
+    @Volatile
     private var isModelLoaded = false
+
+    @Volatile
     private var isLoadingModel = false
 
-    override suspend fun analyze(resume: String): Result<AnalysisResult> {
-        return withContext(Dispatchers.Default) {
-            try {
-                if (!isModelLoaded && !isLoadingModel) {
-                    loadModel()
-                }
+    // ============= ПУБЛИЧНЫЙ МЕТОД ДЛЯ ПРОВЕРКИ =============
 
-                var attempts = 0
-                while (!isModelLoaded && attempts < 50) {
-                    delay(100)
-                    attempts++
-                }
+    /**
+     * Проверка, загружена ли модель
+     */
+    fun isModelReady(): Boolean = isModelLoaded
 
-                if (!isModelLoaded) {
-                    return@withContext Result.failure(AnalysisError.ModelNotAvailable)
-                }
+    /**
+     * Ожидание загрузки модели с таймаутом
+     * @return true если модель загружена, false если таймаут
+     */
+    suspend fun waitForModelLoad(): Boolean = withContext(Dispatchers.IO) {
+        if (isModelLoaded) return@withContext true
 
-                val facade = requireModelLoaded()
-                ensureTokenizerLoaded()
-                loadMetadata()
-
-                val (inputIds, attentionMask) = tokenizer.tokenize(resume)
-                val (score, probs) = facade.predict(inputIds, attentionMask)
-
-                val allTags = buildIssues(probs)
-
-                Result.success(
-                    AnalysisResult(
-                        score = score,
-                        issues = allTags.filter { it.severity == IssueSeverity.CRITICAL },
-                        warnings = allTags.filter { it.severity == IssueSeverity.WARNING },
-                        allTags = allTags
-                    )
-                )
-            } catch (e: FileNotFoundException) {
-                Log.e("RESUME_ANALYZER", "ModelNotAvailable", e)
-                Result.failure(AnalysisError.ModelNotAvailable)
-            } catch (e: IllegalStateException) {
-                Log.e("RESUME_ANALYZER", "TokenizerError", e)
-                Result.failure(AnalysisError.TokenizerError(e.message ?: "Tokenization failed"))
-            } catch (e: Exception) {
-                Log.e("RESUME_ANALYZER", "InferenceError", e)
-                Result.failure(AnalysisError.InferenceError(e.message ?: "Inference failed"))
+        val result = withTimeoutOrNull(MODEL_LOAD_TIMEOUT_MS) {
+            while (!isModelLoaded && isLoadingModel) {
+                delay(100)
             }
+            isModelLoaded
         }
+
+        return@withContext result == true
     }
 
+    // ============= АСИНХРОННАЯ ЗАГРУЗКА МОДЕЛИ =============
+
+    /**
+     * Загрузка модели (вызывается один раз при старте или первом анализе)
+     */
     suspend fun loadModel() {
         if (isModelLoaded || isLoadingModel) return
 
         isLoadingModel = true
+        Log.d(TAG, "Starting async model loading...")
+
         withContext(Dispatchers.IO) {
             try {
                 val modelPath = modelDownloader.getModelPath()
-                Log.d("RESUME_ANALYZER", "Loading model from: $modelPath")
+                Log.d(TAG, "Loading model from: $modelPath")
                 val facade = PyTorchModelFacade(modelPath)
                 facade.load()
                 modelFacade = facade
                 isModelLoaded = true
-                Log.d("RESUME_ANALYZER", "Model loaded successfully")
+                Log.d(TAG, "Model loaded successfully")
             } catch (e: Exception) {
-                Log.e("RESUME_ANALYZER", "Failed to load model", e)
+                Log.e(TAG, "Failed to load model", e)
                 throw e
             } finally {
                 isLoadingModel = false
@@ -100,31 +97,124 @@ class ResumeRepositoryImpl(
     }
 
     /**
-     * Освобождает ресурсы модели.
-     * Вызывается при нехватке памяти или когда приложение уходит в фон.
+     * Принудительная перезагрузка модели (при ошибках или освобождении памяти)
      */
-    fun releaseModel() {
-        if (!isModelLoaded) return
-
-        Log.d("RESUME_ANALYZER", "Releasing model resources")
-        modelFacade?.close()
-        modelFacade = null
-        isModelLoaded = false
-
-        recommendations = emptyMap()
-        tags = emptyList()
-
-        Log.d("RESUME_ANALYZER", "Model resources released successfully")
+    suspend fun reloadModel() {
+        releaseModel()
+        loadModel()
     }
 
     /**
-     * Проверяет, загружена ли модель
+     * Освобождение ресурсов модели
      */
-    fun isModelReady(): Boolean = isModelLoaded
-
-    private fun requireModelLoaded(): PyTorchModelFacade {
-        return modelFacade ?: throw FileNotFoundException("Model not loaded. Call loadModel() first.")
+    fun releaseModel() {
+        if (!isModelLoaded) return
+        Log.d(TAG, "Releasing model resources")
+        modelFacade?.close()
+        modelFacade = null
+        isModelLoaded = false
+        recommendations = emptyMap()
+        tags = emptyList()
+        Log.d(TAG, "Model resources released")
     }
+
+    // ============= ВНУТРЕННИЙ МЕТОД С ОЖИДАНИЕМ МОДЕЛИ =============
+
+    private suspend fun requireModelLoaded(): PyTorchModelFacade {
+        // Ждём загрузку модели с таймаутом
+        val ready = waitForModelLoad()
+        if (!ready) {
+            throw IllegalStateException("Model not loaded within ${MODEL_LOAD_TIMEOUT_MS}ms")
+        }
+        return modelFacade ?: throw FileNotFoundException("Model not loaded")
+    }
+
+    // ============= ХЕШИРОВАНИЕ =============
+
+    private fun hashText(text: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(text.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    // ============= АНАЛИЗ С КЭШИРОВАНИЕМ =============
+
+    override suspend fun analyze(resume: String): Result<AnalysisResult> {
+        return analyzeInternal(resume, useCache = false)
+    }
+
+    override suspend fun analyzeWithCache(resumeText: String): Result<AnalysisResult> {
+        return analyzeInternal(resumeText, useCache = true)
+    }
+
+    private suspend fun analyzeInternal(
+        resume: String,
+        useCache: Boolean
+    ): Result<AnalysisResult> = withContext(Dispatchers.Default) {
+        val trimmed = resume.trim()
+
+        // 1. Валидация
+        if (trimmed.isEmpty()) {
+            return@withContext Result.failure(AnalysisError.EmptyResume)
+        }
+        if (trimmed.length < 50) {
+            return@withContext Result.failure(AnalysisError.TooShort)
+        }
+
+        // 2. Проверка кэша
+        if (useCache) {
+            val hash = hashText(trimmed)
+            val cachedResult = analysisCache.getByHash(hash)
+            if (cachedResult != null) {
+                Log.d(TAG, "Cache hit for hash: ${hash.take(8)}...")
+                return@withContext Result.success(cachedResult)
+            }
+            Log.d(TAG, "Cache miss for hash: ${hash.take(8)}...")
+        }
+
+        // 3. Анализ
+        try {
+            // Убеждаемся, что модель загружена
+            if (!isModelLoaded && !isLoadingModel) {
+                loadModel()
+            }
+
+            val facade = requireModelLoaded()
+            ensureTokenizerLoaded()
+            loadMetadata()
+
+            val (inputIds, attentionMask) = tokenizer.tokenize(trimmed)
+            val (score, probs) = facade.predict(inputIds, attentionMask)
+
+            val allTags = buildIssues(probs)
+
+            val result = AnalysisResult(
+                score = score,
+                issues = allTags.filter { it.severity == IssueSeverity.CRITICAL },
+                warnings = allTags.filter { it.severity == IssueSeverity.WARNING },
+                allTags = allTags
+            )
+
+            // 4. Сохранение в кэш
+            if (useCache) {
+                val hash = hashText(trimmed)
+                analysisCache.saveResult(hash, trimmed, result)
+                Log.d(TAG, "Saved to cache with hash: ${hash.take(8)}...")
+            }
+
+            Result.success(result)
+        } catch (e: FileNotFoundException) {
+            Log.e(TAG, "ModelNotAvailable", e)
+            Result.failure(AnalysisError.ModelNotAvailable)
+        } catch (e: IllegalStateException) {
+            Log.e(TAG, "TokenizerError", e)
+            Result.failure(AnalysisError.TokenizerError(e.message ?: "Tokenization failed"))
+        } catch (e: Exception) {
+            Log.e(TAG, "InferenceError", e)
+            Result.failure(AnalysisError.InferenceError(e.message ?: "Inference failed"))
+        }
+    }
+
+    // ============= ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ =============
 
     private fun ensureTokenizerLoaded() {
         tokenizer.load()
@@ -141,7 +231,7 @@ class ResumeRepositoryImpl(
             val recDtos: Map<String, RecommendationDto> = json.decodeFromString(recJson)
             recommendations = recDtos.mapValues { it.value.recommendation }
         } catch (e: Exception) {
-            Log.w("RESUME_ANALYZER", "Failed to load recommendations.json", e)
+            Log.w(TAG, "Failed to load recommendations.json", e)
         }
 
         try {
@@ -154,7 +244,7 @@ class ResumeRepositoryImpl(
                 warning = metadata.threshold_low
             )
         } catch (e: Exception) {
-            Log.e("RESUME_ANALYZER", "Failed to load metadata.json", e)
+            Log.e(TAG, "Failed to load metadata.json", e)
             throw e
         }
     }
@@ -180,6 +270,8 @@ class ResumeRepositoryImpl(
             )
         }
     }
+
+    // ============= ВНУТРЕННИЕ КЛАССЫ =============
 
     data class Thresholds(val critical: Float, val warning: Float)
 

@@ -24,7 +24,8 @@ val dataModule = module {
         ResumeRepositoryImpl(
             context = androidContext(),
             tokenizer = get(),
-            modelDownloader = get()
+            modelDownloader = get(),
+            analysisCache = get()
         )
     }
 
