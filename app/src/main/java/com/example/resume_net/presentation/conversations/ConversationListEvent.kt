@@ -16,6 +16,16 @@ sealed interface ConversationListEvent {
     data class UpdateSearchQuery(val query: String) : ConversationListEvent
 
     /**
+     * Активировать/деактивировать поиск
+     */
+    data class SetSearchActive(val isActive: Boolean) : ConversationListEvent
+
+    /**
+     * Очистить поиск
+     */
+    data object ClearSearch : ConversationListEvent
+
+    /**
      * Удалить диалог
      */
     data class DeleteConversation(val conversationId: Long) : ConversationListEvent
@@ -27,11 +37,6 @@ sealed interface ConversationListEvent {
         val conversationId: Long,
         val newTitle: String
     ) : ConversationListEvent
-
-    /**
-     * Очистить поиск
-     */
-    data object ClearSearch : ConversationListEvent
 
     /**
      * Сбросить ошибку

@@ -38,6 +38,7 @@ val domainModule = module {
 
     viewModel { ConversationListViewModel(
         getConversationsUseCase = get(),
-        deleteConversationUseCase = get()
+        deleteConversationUseCase = get(),
+        conversationRepository = get()
     ) }
 }

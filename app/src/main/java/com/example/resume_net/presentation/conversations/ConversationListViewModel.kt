@@ -2,6 +2,8 @@ package com.example.resume_net.presentation.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.resume_net.domain.model.Conversation
+import com.example.resume_net.domain.repository.ConversationRepository
 import com.example.resume_net.domain.usecase.DeleteConversationUseCase
 import com.example.resume_net.domain.usecase.GetConversationsUseCase
 import kotlinx.coroutines.flow.*
@@ -9,7 +11,8 @@ import kotlinx.coroutines.launch
 
 class ConversationListViewModel(
     private val getConversationsUseCase: GetConversationsUseCase,
-    private val deleteConversationUseCase: DeleteConversationUseCase
+    private val deleteConversationUseCase: DeleteConversationUseCase,
+    private val conversationRepository: ConversationRepository  // ← ДОБАВИТЬ для rename
 ) : ViewModel() {
 
     // ============= СОСТОЯНИЕ =============
@@ -20,10 +23,12 @@ class ConversationListViewModel(
     private val _effect = MutableSharedFlow<ConversationListEffect>()
     val effect: SharedFlow<ConversationListEffect> = _effect.asSharedFlow()
 
+    // Кэш всех диалогов (без фильтрации)
+    private var allConversations: List<Conversation> = emptyList()
+
     // ============= ПОДПИСКА НА ИЗМЕНЕНИЯ В БД =============
 
     init {
-        // Подписываемся на Flow из репозитория для автообновления
         observeConversations()
     }
 
@@ -38,9 +43,10 @@ class ConversationListViewModel(
                     _effect.emit(ConversationListEffect.ShowError(error.message ?: "Ошибка загрузки"))
                 }
                 .collect { conversations ->
+                    allConversations = conversations
+                    updateFilteredList()
                     _state.update { currentState ->
                         currentState.copy(
-                            conversations = applySearchFilter(conversations, currentState.searchQuery),
                             isLoading = false,
                             isRefreshing = false
                         )
@@ -49,15 +55,32 @@ class ConversationListViewModel(
         }
     }
 
+    /**
+     * Обновление отфильтрованного списка на основе поискового запроса
+     */
+    private fun updateFilteredList() {
+        val query = _state.value.searchQuery
+        val filtered = if (query.isBlank()) {
+            allConversations
+        } else {
+            allConversations.filter { conversation ->
+                conversation.title.contains(query, ignoreCase = true) ||
+                        conversation.lastMessagePreview?.contains(query, ignoreCase = true) == true
+            }
+        }
+        _state.update { it.copy(filteredConversations = filtered) }
+    }
+
     // ============= ОБРАБОТКА СОБЫТИЙ =============
 
     fun onEvent(event: ConversationListEvent) {
         when (event) {
             is ConversationListEvent.LoadConversations -> loadConversations()
             is ConversationListEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
+            is ConversationListEvent.SetSearchActive -> setSearchActive(event.isActive)
+            is ConversationListEvent.ClearSearch -> clearSearch()
             is ConversationListEvent.DeleteConversation -> deleteConversation(event.conversationId)
             is ConversationListEvent.RenameConversation -> renameConversation(event.conversationId, event.newTitle)
-            is ConversationListEvent.ClearSearch -> clearSearch()
             is ConversationListEvent.ClearError -> clearError()
         }
     }
@@ -71,12 +94,9 @@ class ConversationListViewModel(
 
             try {
                 val conversations = getConversationsUseCase()
-                _state.update { currentState ->
-                    currentState.copy(
-                        conversations = applySearchFilter(conversations, currentState.searchQuery),
-                        isRefreshing = false
-                    )
-                }
+                allConversations = conversations
+                updateFilteredList()
+                _state.update { it.copy(isRefreshing = false) }
             } catch (e: Exception) {
                 _state.update { it.copy(isRefreshing = false, error = e.message) }
                 _effect.emit(ConversationListEffect.ShowError(e.message ?: "Ошибка загрузки"))
@@ -88,19 +108,33 @@ class ConversationListViewModel(
      * Обновление поискового запроса
      */
     private fun updateSearchQuery(query: String) {
-        viewModelScope.launch {
-            _state.update { currentState ->
-                currentState.copy(searchQuery = query)
-            }
-
-            // Обновляем фильтрованный список
-            val allConversations = getConversationsUseCase()
-            _state.update { currentState ->
-                currentState.copy(
-                    conversations = applySearchFilter(allConversations, query)
-                )
-            }
+        _state.update { currentState ->
+            currentState.copy(searchQuery = query)
         }
+        updateFilteredList()
+    }
+
+    /**
+     * Активация/деактивация режима поиска
+     */
+    private fun setSearchActive(isActive: Boolean) {
+        if (!isActive) {
+            clearSearch()
+        }
+        _state.update { it.copy(isSearchActive = isActive) }
+    }
+
+    /**
+     * Очистка поиска
+     */
+    private fun clearSearch() {
+        _state.update { currentState ->
+            currentState.copy(
+                searchQuery = "",
+                isSearchActive = false
+            )
+        }
+        updateFilteredList()
     }
 
     /**
@@ -128,9 +162,9 @@ class ConversationListViewModel(
     private fun renameConversation(conversationId: Long, newTitle: String) {
         viewModelScope.launch {
             try {
-                // Здесь нужно вызвать rename из репозитория
-                // conversationRepository.renameConversation(conversationId, newTitle)
+                conversationRepository.renameConversation(conversationId, newTitle)
                 _effect.emit(ConversationListEffect.ShowSuccess("Название изменено"))
+                // Список обновится автоматически
             } catch (e: Exception) {
                 _effect.emit(ConversationListEffect.ShowError(e.message ?: "Ошибка переименования"))
             }
@@ -138,32 +172,10 @@ class ConversationListViewModel(
     }
 
     /**
-     * Очистка поиска
-     */
-    private fun clearSearch() {
-        updateSearchQuery("")
-    }
-
-    /**
      * Сброс ошибки
      */
     private fun clearError() {
         _state.update { it.copy(error = null) }
-    }
-
-    /**
-     * Применить фильтр поиска к списку диалогов
-     */
-    private fun applySearchFilter(
-        conversations: List<com.example.resume_net.domain.model.Conversation>,
-        query: String
-    ): List<com.example.resume_net.domain.model.Conversation> {
-        if (query.isBlank()) return conversations
-
-        return conversations.filter { conversation ->
-            conversation.title.contains(query, ignoreCase = true) ||
-                    conversation.lastMessagePreview?.contains(query, ignoreCase = true) == true
-        }
     }
 
     /**

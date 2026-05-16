@@ -1,48 +1,60 @@
 package com.example.resume_net.presentation.navigation
 
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.resume_net.presentation.analysis.AnalysisScreen
-import com.example.resume_net.presentation.analysis.AnalysisViewModel
-import com.example.resume_net.presentation.result.ResultScreen
-import org.koin.androidx.compose.koinViewModel
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.resume_net.presentation.conversations.ConversationsListScreen
+import com.example.resume_net.presentation.newanalysis.NewAnalysisScreen  // будет создан
 
-@androidx.compose.runtime.Composable
-fun NavGraph(navController: NavHostController) {
-    val viewModel: AnalysisViewModel = koinViewModel()
-    val state by viewModel.state.collectAsStateWithLifecycle()
+@Composable
+fun NavGraph(
+    startDestination: String = Screen.Conversations.route
+) {
+    val navController = rememberNavController()
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Analysis.route
+        startDestination = startDestination
     ) {
-        composable(Screen.Analysis.route) {
-            AnalysisScreen(
-                onNavigateToResult = {
-                    navController.navigate(Screen.Result.route)
+        // Экран списка диалогов
+        composable(Screen.Conversations.route) {
+            ConversationsListScreen(
+                onNavigateToChat = { conversationId ->
+                    navController.navigate("${Screen.Chat.route}/$conversationId")
+                },
+                onNavigateToNewAnalysis = {
+                    navController.navigate(Screen.NewAnalysis.route)
                 }
             )
         }
 
-        composable(Screen.Result.route) {
-            val result = state.result
-
-            LaunchedEffect(result) {
-                if (result == null) {
+        // Экран нового анализа
+        composable(Screen.NewAnalysis.route) {
+            NewAnalysisScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onAnalysisComplete = { conversationId ->
                     navController.popBackStack()
+                    navController.navigate("${Screen.Chat.route}/$conversationId")
                 }
-            }
+            )
+        }
 
-            if (result != null) {
-                ResultScreen(
-                    result = result,
-                    onBack = { navController.popBackStack() }
-                )
-            }
+        // Экран чата
+        composable(
+            route = "${Screen.Chat.route}/{conversationId}",
+            arguments = listOf(
+                navArgument("conversationId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val conversationId = backStackEntry.arguments?.getLong("conversationId") ?: 0L
+            // TODO: ChatAnalysisScreen
+            // ChatAnalysisScreen(
+            //     conversationId = conversationId,
+            //     onNavigateBack = { navController.popBackStack() }
+            // )
         }
     }
 }

@@ -7,8 +7,10 @@ import com.example.resume_net.domain.model.Conversation
  */
 data class ConversationListState(
     val conversations: List<Conversation> = emptyList(),
+    val filteredConversations: List<Conversation> = emptyList(),
     val isLoading: Boolean = false,
     val searchQuery: String = "",
+    val isSearchActive: Boolean = false,
     val isRefreshing: Boolean = false,
     val error: String? = null
 )
