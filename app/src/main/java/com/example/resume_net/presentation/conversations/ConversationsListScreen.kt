@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -162,9 +163,6 @@ fun ConversationsListScreen(
     }
 }
 
-/**
- * TopAppBar с поиском
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchTopAppBar(
@@ -174,55 +172,59 @@ private fun SearchTopAppBar(
     onSearchActivate: (Boolean) -> Unit,
     onClearSearch: () -> Unit
 ) {
-    CenterAlignedTopAppBar(
-        title = {
-            AnimatedVisibility(
-                visible = !isSearchActive,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Text(
-                    text = "Анализы резюме",
-                    style = MaterialTheme.typography.titleLarge
+    if (isSearchActive) {
+        // Режим поиска - используем TopAppBar с полем ввода
+        TopAppBar(
+            title = {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    placeholder = { Text("Поиск...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    )
                 )
-            }
-        },
-        navigationIcon = {
-            if (isSearchActive) {
+            },
+            navigationIcon = {
                 IconButton(onClick = { onSearchActivate(false) }) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Назад"
                     )
                 }
-            }
-        },
-        actions = {
-            if (isSearchActive) {
-                // Поле поиска
-                SearchBar(
-                    query = searchQuery,
-                    onQueryChange = onSearchQueryChange,
-                    onClear = onClearSearch,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 16.dp)
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface
+            )
+        )
+    } else {
+        // Обычный режим - CenterAlignedTopAppBar
+        CenterAlignedTopAppBar(
+            title = {
+                Text(
+                    text = "Анализы резюме",
+                    style = MaterialTheme.typography.titleLarge
                 )
-            } else {
-                // Иконка поиска
+            },
+            actions = {
                 IconButton(onClick = { onSearchActivate(true) }) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Поиск"
                     )
                 }
-            }
-        },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface
+            },
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface
+            )
         )
-    )
+    }
 }
 
 /**

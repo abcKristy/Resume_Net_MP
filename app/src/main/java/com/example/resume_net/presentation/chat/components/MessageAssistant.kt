@@ -47,7 +47,7 @@ fun MessageAssistant(
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 320.dp)
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(12.dp)

@@ -89,17 +89,6 @@ fun ConversationListItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Превью последнего сообщения
-            Text(
-                text = conversation.lastMessagePreview?.take(60) ?: "Нет сообщений",
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // Нижняя строка: оценка + дата
