@@ -31,7 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "resume.db"
                 )
-                    .fallbackToDestructiveMigration()  // ВНИМАНИЕ: удалит старые данные!
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }
             }
