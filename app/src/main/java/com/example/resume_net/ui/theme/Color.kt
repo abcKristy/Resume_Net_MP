@@ -8,7 +8,6 @@ val AccentDark = Color(0xFF42262A)   // Темный акцент (текст, �
 
 val AssistantGradientStart = Color(0xFF85ABD5)
 val AssistantGradientEnd = Color(0xFF90ACCC)
-val ConversationBackground = Color(0xFFDEEBF8)
 
 val AssistantAvatarIcn = Color(0xFFD1DFEE)
 

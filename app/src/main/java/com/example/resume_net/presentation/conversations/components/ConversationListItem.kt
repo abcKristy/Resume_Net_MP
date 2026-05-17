@@ -71,7 +71,7 @@ fun ConversationListItem(
             .onGloballyPositioned { isPressed = false },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.4f)
+            containerColor = Color.White.copy(alpha = 0.55f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {

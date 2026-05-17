@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -110,7 +112,7 @@ fun MessageAssistant(
             SectionHeader(
                 title = "Ключевые проблемы",
                 subtitle = if (hasHighProbabilityTags(analysisResult.allTags)) ">40%" else "топ-3",
-                icon = "📊"
+                icon = Icons.Default.BarChart
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -151,14 +153,12 @@ private fun AssistantAvatar() {
     }
 }
 
-/**
- * Заголовок секции
- */
+// В SectionHeader изменить:
 @Composable
 private fun SectionHeader(
     title: String,
     subtitle: String? = null,
-    icon: String = "•",
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,  // ← вместо icon: String
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -166,16 +166,26 @@ private fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = icon,
-            style = MaterialTheme.typography.titleMedium,
-            color = OnBackgroundLight  // ← бордовый цвет
-        )
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = OnBackgroundLight,
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.Circle,
+                contentDescription = null,
+                tint = OnBackgroundLight,
+                modifier = Modifier.size(8.dp)
+            )
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold,
-            color = OnBackgroundLight  // ← бордовый цвет
+            color = OnBackgroundLight
         )
         if (subtitle != null) {
             Surface(
@@ -185,13 +195,14 @@ private fun SectionHeader(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.labelSmall,
-                    color = OnBackgroundLight,  // ← бордовый цвет
+                    color = OnBackgroundLight,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
     }
 }
+
 
 /**
  * Получение релевантных тегов для отображения

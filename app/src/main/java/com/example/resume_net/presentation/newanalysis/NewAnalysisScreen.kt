@@ -23,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.MenuBook  // ← добавлен импорт
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -98,7 +100,6 @@ fun NewAnalysisScreen(
                     }
                 }
                 is NewAnalysisEffect.ShowTooltip -> {
-                    // Показываем анимацию ошибки валидации
                     validationErrorHeight = 8.dp
                     showValidationError = true
                     delay(2000)
@@ -110,7 +111,7 @@ fun NewAnalysisScreen(
         }
     }
 
-    // Диалоги (без изменений)
+    // Диалоги
     if (state.showModelLoadingDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(NewAnalysisEvent.DismissModelLoadingDialog) },
@@ -172,20 +173,20 @@ fun NewAnalysisScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-            // Scrollable контент (занимает вес, чтобы кнопка была внизу)
+            // Scrollable контент
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Поле названия чата (опционально)
+                // Поле названия чата
                 OutlinedTextField(
                     value = state.conversationTitle,
                     onValueChange = { viewModel.onEvent(NewAnalysisEvent.UpdateConversationTitle(it)) },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
                         Text(
-                            "Название чата (опционально)",
+                            "Специальность...",
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
                     },
@@ -262,15 +263,15 @@ fun NewAnalysisScreen(
                     }
                 }
 
-                // Счётчик символов (незаметный, меняется при ошибке)
+                // Счётчик символов
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${state.charCount} / 50 символов",
                     style = MaterialTheme.typography.labelSmall,
                     color = if (state.charCount >= 50 || !showValidationError) {
-                        OnBackgroundLight.copy(alpha = 0.4f)  // незаметный тёмно-голубой
+                        OnBackgroundLight.copy(alpha = 0.4f)
                     } else {
-                        Color(0xFFE57373).copy(alpha = 0.7f)  // мягкий красный при ошибке
+                        Color(0xFFE57373).copy(alpha = 0.7f)
                     }
                 )
 
@@ -278,7 +279,8 @@ fun NewAnalysisScreen(
 
                 // Аккордеон с примерами
                 ExpandableSection(
-                    title = "📝 Примеры резюме",
+                    title = "Примеры резюме",
+                    icon = Icons.Default.MenuBook,
                     expanded = isExamplesExpanded,
                     onExpandedChange = { isExamplesExpanded = it }
                 ) {
@@ -299,7 +301,7 @@ fun NewAnalysisScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Информационная панель
+                // Информационная панель (исправлена структура)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
@@ -308,12 +310,23 @@ fun NewAnalysisScreen(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "💡 О чём стоит помнить",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "О чём стоит помнить",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "• Чем подробнее резюме, тем точнее анализ\n" +
@@ -329,7 +342,7 @@ fun NewAnalysisScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Кнопка анализировать (внизу экрана)
+            // Кнопка анализировать
             Button(
                 onClick = { viewModel.onEvent(NewAnalysisEvent.Analyze) },
                 modifier = Modifier
@@ -351,7 +364,7 @@ fun NewAnalysisScreen(
                 }
             }
 
-            // Отображение ошибки (если есть)
+            // Отображение ошибки
             state.error?.let { error ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Card(
@@ -389,9 +402,6 @@ fun NewAnalysisScreen(
     }
 }
 
-/**
- * Preview
- */
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun NewAnalysisScreenPreview() {
