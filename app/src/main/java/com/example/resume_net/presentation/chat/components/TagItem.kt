@@ -1,137 +1,151 @@
 package com.example.resume_net.presentation.chat.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.resume_net.domain.model.AnalysisIssue
-import com.example.resume_net.ui.theme.tagScoreHigh
-import com.example.resume_net.ui.theme.tagScoreLow
-import com.example.resume_net.ui.theme.tagScoreMedium
+import com.example.resume_net.ui.theme.tagHigh
+import com.example.resume_net.ui.theme.tagLow
+import com.example.resume_net.ui.theme.tagMedium
 
-/**
- * Компонент для отображения одного тега с прогресс-баром
- * При нажатии разворачивает/сворачивает рекомендацию
- *
- * @param issue тег с вероятностью
- * @param modifier модификатор
- */
 @Composable
 fun TagItem(
     issue: AnalysisIssue,
     modifier: Modifier = Modifier
 ) {
     var isExpanded by remember { mutableStateOf(false) }
-
     val progress = issue.probability
+
     val barColor = when {
-        progress > 0.6f -> MaterialTheme.colorScheme.tagScoreHigh
-        progress > 0.3f -> MaterialTheme.colorScheme.tagScoreMedium
-        else -> MaterialTheme.colorScheme.tagScoreLow
+        progress > 0.6f -> MaterialTheme.colorScheme.tagHigh
+        progress > 0.3f -> MaterialTheme.colorScheme.tagMedium
+        else -> MaterialTheme.colorScheme.tagLow
     }
 
-    Column(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .animateContentSize(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        // Верхняя строка: название, прогресс-бар, процент, иконка разворота
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { isExpanded = !isExpanded },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .clickable { isExpanded = !isExpanded }
+                .padding(12.dp)
         ) {
-            // Название тега (кликабельное)
-            Text(
-                text = issue.tag.displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.width(140.dp)
-            )
-
-            // Прогресс-бар
-            LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp)),
-                color = barColor,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Процент
-            Text(
-                text = "${(progress * 100).toInt()}%",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.width(40.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Иконка разворота/сворачивания
-            Icon(
-                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = if (isExpanded) "Свернуть рекомендацию" else "Развернуть рекомендацию",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-
-        // Анимированная рекомендация (появляется при разворачивании)
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = expandVertically(
-                animationSpec = tween(durationMillis = 200)
-            ) + fadeIn(),
-            exit = shrinkVertically(
-                animationSpec = tween(durationMillis = 200)
-            ) + fadeOut()
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                )
+            // Верхняя строка
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(
-                    modifier = Modifier.padding(12.dp)
+                Text(
+                    text = issue.tag.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Заголовок рекомендации
                     Text(
-                        text = "💡 Совет по улучшению",
+                        text = "${(progress * 100).toInt()}%",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = barColor
                     )
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-                    // Текст рекомендации
+            // Тонкий прогресс-бар
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(barColor, barColor.copy(alpha = 0.7f))
+                            )
+                        )
+                )
+            }
+
+            // Развёрнутая рекомендация
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically(tween(200)) + fadeIn(),
+                exit = shrinkVertically(tween(200)) + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     Text(
-                        text = issue.recommendation.ifBlank { "Рекомендация не добавлена" },
+                        text = issue.recommendation.ifBlank { "✨ Рекомендация будет добавлена в следующей версии" },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
                     )
                 }
             }

@@ -8,9 +8,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.resume_net.domain.model.ChatMessage
 import java.text.SimpleDateFormat
 import java.util.*
@@ -22,55 +26,58 @@ fun MessageUser(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val isLongText = message.text.length > 300
-
-    // Форматирование времени
     val formattedTime = formatTime(message.timestamp)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.End
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 280.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(12.dp),
+                .widthIn(max = 300.dp)
+                .clip(RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp))  // ← изменённая форма
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                        )
+                    )
+                )
+                .padding(14.dp),
             horizontalAlignment = Alignment.End
         ) {
-            // Текст сообщения
             Text(
                 text = message.text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = if (isExpanded) Int.MAX_VALUE else 5,
+                color = Color.White,
+                maxLines = if (isExpanded) Int.MAX_VALUE else 6,
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Кнопка "Показать полностью" (только для длинного текста)
             if (isLongText) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 TextButton(
                     onClick = { isExpanded = !isExpanded },
                     modifier = Modifier.height(32.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = if (isExpanded) "Свернуть" else "Показать полностью",
+                        text = if (isExpanded) "Свернуть ↑" else "Читать далее ↓",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            // Время отправления
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = formattedTime,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 10.sp
             )
         }
     }

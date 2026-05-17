@@ -28,9 +28,6 @@ val OnErrorLight = Color(0xFFFFFFFF)
 val ErrorContainerLight = Color(0xFFFFEBEE)
 val OnErrorContainerLight = Color(0xFFB71C1C)
 
-val SuccessLight = Color(0xFF2E7D32)
-val WarningLight = Color(0xFFFFA000)
-
 // Dark Theme цвета
 val PrimaryDark = AccentLight
 val OnPrimaryDark = AccentDark
@@ -59,5 +56,20 @@ val TagScoreMedium = Color(0xFFFFA000) // Желтый 30-60% (ярче)
 val TagScoreLow = Color(0xFF2E7D32)    // Зеленый 0-30% (темнее для контраста)
 
 // Дополнительные цвета
-val DividerLight = AccentDark.copy(alpha = 0.2f)
-val DividerDark = AccentLight.copy(alpha = 0.2f)
+val AssistantAvatarGradientStart = Color(0xFF42262A)   // AccentDark
+val AssistantAvatarGradientEnd = Color(0xFF5D3A40)     // чуть светлее AccentDark
+
+val ScoreHighGradientStart = Color(0xFF66BB6A)   // мягкий зелёный
+val ScoreHighGradientEnd = Color(0xFF2E7D32)     // тёмно-зелёный
+
+val ScoreMediumGradientStart = Color(0xFFFFB74D) // мягкий оранжевый
+val ScoreMediumGradientEnd = Color(0xFFFF8F00)   // тёмно-оранжевый
+
+val ScoreLowGradientStart = Color(0xFFEF5350)    // мягкий красный
+val ScoreLowGradientEnd = Color(0xFFD32F2F)      // тёмно-красный
+
+val TagHighColor = Color(0xFFE57373)    // мягкий красный для прогресс-бара
+val TagMediumColor = Color(0xFFFFB74D)  // мягкий оранжевый
+val TagLowColor = Color(0xFF81C784)     // мягкий зелёный
+
+val InputFieldBackground = Color(0xFFF5F5F5)  // светлый фон для поля ввода

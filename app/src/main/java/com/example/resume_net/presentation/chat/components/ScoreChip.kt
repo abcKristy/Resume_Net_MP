@@ -10,53 +10,66 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.resume_net.ui.theme.tagScoreHigh
-import com.example.resume_net.ui.theme.tagScoreLow
-import com.example.resume_net.ui.theme.tagScoreMedium
+import com.example.resume_net.ui.theme.scoreHighGradientEnd
+import com.example.resume_net.ui.theme.scoreHighGradientStart
+import com.example.resume_net.ui.theme.scoreLowGradientEnd
+import com.example.resume_net.ui.theme.scoreLowGradientStart
+import com.example.resume_net.ui.theme.scoreMediumGradientEnd
+import com.example.resume_net.ui.theme.scoreMediumGradientStart
 
-/**
- * Компонент для отображения оценки резюме
- *
- * @param score оценка от 1.0 до 5.0
- */
 @Composable
 fun ScoreChip(
     score: Float,
     modifier: Modifier = Modifier
 ) {
-    val (backgroundColor, textColor) = when {
-        score >= 4.0f -> MaterialTheme.colorScheme.tagScoreLow to Color.White
-        score >= 3.0f -> MaterialTheme.colorScheme.tagScoreMedium to Color.Black
-        else -> MaterialTheme.colorScheme.tagScoreHigh to Color.White            // Красный
+    val (startColor, endColor) = when {
+        score >= 4.0f -> MaterialTheme.colorScheme.scoreHighGradientStart to MaterialTheme.colorScheme.scoreHighGradientEnd
+        score >= 3.0f -> MaterialTheme.colorScheme.scoreMediumGradientStart to MaterialTheme.colorScheme.scoreMediumGradientEnd
+        else -> MaterialTheme.colorScheme.scoreLowGradientStart to MaterialTheme.colorScheme.scoreLowGradientEnd
     }
 
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp)),
-        color = backgroundColor,
-        shape = RoundedCornerShape(16.dp)
+            .clip(RoundedCornerShape(30.dp)),
+        shadowElevation = 2.dp,
+        tonalElevation = 0.dp
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(startColor, endColor)
+                    )
+                )
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Оценка",
-                tint = textColor,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = String.format("%.1f / 5.0", score),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "Оценка",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = String.format("%.1f", score),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = "/ 5.0",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.85f)
+                )
+            }
         }
     }
 }
