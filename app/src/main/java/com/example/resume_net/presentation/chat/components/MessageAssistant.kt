@@ -11,8 +11,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.resume_net.domain.model.AnalysisIssue
 import com.example.resume_net.domain.model.AnalysisResult
 import com.example.resume_net.domain.model.ChatMessage
+import com.example.resume_net.domain.model.IssueSeverity
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -22,7 +24,7 @@ import java.util.*
  * Структура:
  * 1. ScoreChip - оценка резюме
  * 2. Разделитель
- * 3. Список TagItem - теги с вероятностями
+ * 3. Список TagItem - релевантные теги (только >40% или топ-3)
  * 4. Разделитель
  * 5. Общая рекомендация
  *
@@ -38,6 +40,9 @@ fun MessageAssistant(
 ) {
     val analysisResult = message.analysisResult
     val formattedTime = formatTime(message.timestamp)
+
+    // Получаем релевантные теги (порог 40% или топ-3)
+    val relevantTags = getRelevantTags(analysisResult.allTags)
 
     Row(
         modifier = modifier
@@ -60,26 +65,59 @@ fun MessageAssistant(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 2. Заголовок секции тегов
-            Text(
-                text = "📊 Теги и вероятности",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // 2. Заголовок секции тегов (с пояснением)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📊 Ключевые проблемы",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // Пояснение, почему показываются именно эти теги
+                if (hasHighProbabilityTags(analysisResult.allTags)) {
+                    Text(
+                        text = "проблемы >40%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                } else {
+                    Text(
+                        text = "топ-3 рекомендации",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Список тегов
-            analysisResult.allTags.forEach { issue ->
-                TagItem(
-                    issue = issue,
-                    onInfoClick = { onTagInfoClick(issue.tag.displayName, issue.recommendation) }
+            // Список релевантных тегов
+            if (relevantTags.isEmpty()) {
+                // Если нет тегов (маловероятно, но на всякий случай)
+                Text(
+                    text = "✨ Резюме выглядит отлично! Нет критических проблем.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
                 )
+            } else {
+                relevantTags.forEach { issue ->
+                    TagItem(
+                        issue = issue,
+                        onInfoClick = { onTagInfoClick(issue.tag.displayName, issue.recommendation) }
+                    )
+                }
             }
 
-            // Разделитель (если есть рекомендация)
-            if (analysisResult.issues.isNotEmpty() || analysisResult.warnings.isNotEmpty()) {
+            // Разделитель (если есть рекомендации)
+            val criticalIssues = relevantTags.filter { it.severity == IssueSeverity.CRITICAL }
+            val warnings = relevantTags.filter { it.severity == IssueSeverity.WARNING }
+
+            if (criticalIssues.isNotEmpty() || warnings.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
@@ -95,14 +133,14 @@ fun MessageAssistant(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // Критические проблемы
-                if (analysisResult.issues.isNotEmpty()) {
+                if (criticalIssues.isNotEmpty()) {
                     Text(
                         text = "Критические проблемы:",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.error
                     )
-                    analysisResult.issues.forEach { issue ->
+                    criticalIssues.forEach { issue ->
                         Text(
                             text = "• ${issue.recommendation}",
                             style = MaterialTheme.typography.bodySmall,
@@ -114,14 +152,14 @@ fun MessageAssistant(
                 }
 
                 // Предупреждения
-                if (analysisResult.warnings.isNotEmpty()) {
+                if (warnings.isNotEmpty()) {
                     Text(
                         text = "Рекомендации:",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    analysisResult.warnings.forEach { issue ->
+                    warnings.forEach { issue ->
                         Text(
                             text = "• ${issue.recommendation}",
                             style = MaterialTheme.typography.bodySmall,
@@ -142,6 +180,35 @@ fun MessageAssistant(
             )
         }
     }
+}
+
+/**
+ * Получение релевантных тегов для отображения
+ *
+ * Логика:
+ * 1. Если есть теги с вероятностью > 40% → показываем их
+ * 2. Если нет ни одного тега > 40% → показываем топ-3 тега с наибольшей вероятностью
+ *
+ * @param allTags все 20 тегов из анализа
+ * @return отфильтрованный список тегов
+ */
+private fun getRelevantTags(allTags: List<AnalysisIssue>): List<AnalysisIssue> {
+    val highProbabilityTags = allTags.filter { it.probability > 0.4f }
+
+    return if (highProbabilityTags.isNotEmpty()) {
+        // Сортируем по убыванию вероятности и возвращаем все
+        highProbabilityTags.sortedByDescending { it.probability }
+    } else {
+        // Берём топ-3 по вероятности
+        allTags.sortedByDescending { it.probability }.take(3)
+    }
+}
+
+/**
+ * Проверка, есть ли теги с вероятностью выше 40%
+ */
+private fun hasHighProbabilityTags(allTags: List<AnalysisIssue>): Boolean {
+    return allTags.any { it.probability > 0.4f }
 }
 
 /**
@@ -176,63 +243,118 @@ private fun MessageAssistantPreview() {
             color = MaterialTheme.colorScheme.background
         ) {
             Column {
-                // Создаем моковые данные для превью
-                val mockAnalysisResult = com.example.resume_net.domain.model.AnalysisResult(
-                    score = 4.2f,
+                // Сценарий 1: Есть теги >40%
+                val mockResultWithHighTags = AnalysisResult(
+                    score = 3.2f,
                     issues = listOf(
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
-                            probability = 0.8f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
+                            probability = 0.85f,
+                            severity = IssueSeverity.CRITICAL,
                             recommendation = "Добавьте конкретные цифры и метрики"
                         ),
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
-                            probability = 0.7f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
+                            probability = 0.72f,
+                            severity = IssueSeverity.CRITICAL,
                             recommendation = "Укажите используемые технологии"
                         )
                     ),
                     warnings = listOf(
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
                             probability = 0.45f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.WARNING,
+                            severity = IssueSeverity.WARNING,
                             recommendation = "Добавьте больше информации о достижениях"
                         )
                     ),
                     allTags = listOf(
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
-                            probability = 0.8f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
+                            probability = 0.85f,
+                            severity = IssueSeverity.CRITICAL,
                             recommendation = "Добавьте конкретные цифры и метрики"
                         ),
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
-                            probability = 0.7f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
+                            probability = 0.72f,
+                            severity = IssueSeverity.CRITICAL,
                             recommendation = "Укажите используемые технологии"
                         ),
-                        com.example.resume_net.domain.model.AnalysisIssue(
+                        AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
                             probability = 0.45f,
-                            severity = com.example.resume_net.domain.model.IssueSeverity.WARNING,
+                            severity = IssueSeverity.WARNING,
                             recommendation = "Добавьте больше информации о достижениях"
+                        ),
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.BAD_STRUCTURE,
+                            probability = 0.12f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Структура в порядке"
                         )
                     )
                 )
 
-                val mockMessage = com.example.resume_net.domain.model.ChatMessage.AssistantMessage(
-                    id = 1,
-                    conversationId = 1,
-                    analysisResult = mockAnalysisResult,
-                    timestamp = System.currentTimeMillis()
+                MessageAssistant(
+                    message = ChatMessage.AssistantMessage(
+                        id = 1,
+                        conversationId = 1,
+                        analysisResult = mockResultWithHighTags,
+                        timestamp = System.currentTimeMillis()
+                    ),
+                    onTagInfoClick = { _, _ -> }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Сценарий 2: Нет тегов >40%, показываем топ-3
+                val mockResultWithLowTags = AnalysisResult(
+                    score = 4.5f,
+                    issues = emptyList(),
+                    warnings = emptyList(),
+                    allTags = listOf(
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
+                            probability = 0.38f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Можно добавить цифры"
+                        ),
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
+                            probability = 0.35f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Добавьте деталей"
+                        ),
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
+                            probability = 0.32f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Укажите стек"
+                        ),
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.BAD_STRUCTURE,
+                            probability = 0.28f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Структура хорошая"
+                        ),
+                        AnalysisIssue(
+                            tag = com.example.resume_net.domain.model.ResumeTag.NO_ACHIEVEMENTS,
+                            probability = 0.25f,
+                            severity = IssueSeverity.OK,
+                            recommendation = "Достижения есть"
+                        )
+                    )
                 )
 
                 MessageAssistant(
-                    message = mockMessage,
-                    onTagInfoClick = { tagName, recommendation -> }
+                    message = ChatMessage.AssistantMessage(
+                        id = 2,
+                        conversationId = 1,
+                        analysisResult = mockResultWithLowTags,
+                        timestamp = System.currentTimeMillis()
+                    ),
+                    onTagInfoClick = { _, _ -> }
                 )
             }
         }
