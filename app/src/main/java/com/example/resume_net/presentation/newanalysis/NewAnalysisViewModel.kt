@@ -35,6 +35,7 @@ class NewAnalysisViewModel(
             is NewAnalysisEvent.RetryAnalysis -> retryAnalysis()
             is NewAnalysisEvent.DismissDuplicateDialog -> dismissDuplicateDialog()
             is NewAnalysisEvent.OpenExistingConversation -> openExistingConversation()
+            is NewAnalysisEvent.UpdateConversationTitle -> updateConversationTitle(event.title)
         }
     }
 
@@ -146,5 +147,9 @@ class NewAnalysisViewModel(
      */
     private fun clearError() {
         _state.update { it.copy(error = null) }
+    }
+
+    private fun updateConversationTitle(title: String) {
+        _state.update { it.copy(conversationTitle = title) }
     }
 }

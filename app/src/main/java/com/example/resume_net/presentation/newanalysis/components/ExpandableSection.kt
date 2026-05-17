@@ -13,16 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.resume_net.ui.theme.AccentDark
+import com.example.resume_net.ui.theme.AccentLight
 
 /**
  * Компонент раскрывающейся секции (аккордеон)
- *
- * @param title заголовок секции
- * @param expanded состояние (раскрыта/скрыта)
- * @param onExpandedChange callback изменения состояния
- * @param content содержимое секции
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,13 +37,12 @@ fun ExpandableSection(
             .clip(RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant  // голубой фон
         )
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Заголовок секции (кликабельный)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +65,6 @@ fun ExpandableSection(
                 )
             }
 
-            // Анимированное содержимое
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically(
@@ -91,10 +87,7 @@ fun ExpandableSection(
 /**
  * Компонент карточки примера резюме
  *
- * @param title название примера
- * @param description краткое описание
- * @param content текст примера
- * @param onClick callback при нажатии
+ * Стиль: бордовый фон + голубой текст (менее акцентный, чем кнопка)
  */
 @Composable
 fun ExampleCard(
@@ -110,11 +103,11 @@ fun ExampleCard(
             .clickable { onClick(content) },
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = AccentDark.copy(alpha = 0.85f)  // бордовый фон (менее насыщенный)
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 1.dp,
-            pressedElevation = 2.dp
+            defaultElevation = 0.dp,
+            pressedElevation = 1.dp
         )
     ) {
         Column(
@@ -124,7 +117,7 @@ fun ExampleCard(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
+                color = AccentLight
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -132,7 +125,7 @@ fun ExampleCard(
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AccentLight.copy(alpha = 0.8f),  // голубой, слегка прозрачный
                 maxLines = 2
             )
         }
