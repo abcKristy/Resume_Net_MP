@@ -180,7 +180,8 @@ private fun SearchTopAppBar(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
                     placeholder = { Text("Поиск...") },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
+                        .heightIn(min = 40.dp, max = 40.dp),
                     singleLine = true,
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -225,40 +226,6 @@ private fun SearchTopAppBar(
             )
         )
     }
-}
-
-/**
- * Компонент поисковой строки
- */
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClear: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        placeholder = { Text("Поиск...") },
-        modifier = modifier,
-        singleLine = true,
-        shape = MaterialTheme.shapes.small,
-        trailingIcon = {
-            if (query.isNotBlank()) {
-                IconButton(onClick = onClear) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Очистить"
-                    )
-                }
-            }
-        },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-        )
-    )
 }
 
 /**

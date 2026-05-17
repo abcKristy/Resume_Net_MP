@@ -25,17 +25,15 @@ import java.util.*
  * 1. ScoreChip - оценка резюме
  * 2. Разделитель
  * 3. Список TagItem - релевантные теги (только >40% или топ-3)
- * 4. Разделитель
- * 5. Общая рекомендация
+ *    - Каждый тег кликабельный, разворачивает рекомендацию
+ * 4. Время отправления
  *
  * @param message сообщение ассистента
- * @param onTagInfoClick колбэк при нажатии на информацию по тегу
  * @param modifier модификатор
  */
 @Composable
 fun MessageAssistant(
     message: ChatMessage.AssistantMessage,
-    onTagInfoClick: (tagName: String, recommendation: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val analysisResult = message.analysisResult
@@ -96,7 +94,7 @@ fun MessageAssistant(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Список релевантных тегов
+            // Список релевантных тегов (каждый кликабельный)
             if (relevantTags.isEmpty()) {
                 // Если нет тегов (маловероятно, но на всякий случай)
                 Text(
@@ -106,67 +104,7 @@ fun MessageAssistant(
                 )
             } else {
                 relevantTags.forEach { issue ->
-                    TagItem(
-                        issue = issue,
-                        onInfoClick = { onTagInfoClick(issue.tag.displayName, issue.recommendation) }
-                    )
-                }
-            }
-
-            // Разделитель (если есть рекомендации)
-            val criticalIssues = relevantTags.filter { it.severity == IssueSeverity.CRITICAL }
-            val warnings = relevantTags.filter { it.severity == IssueSeverity.WARNING }
-
-            if (criticalIssues.isNotEmpty() || warnings.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 3. Общая рекомендация
-                Text(
-                    text = "💡 Рекомендации",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Критические проблемы
-                if (criticalIssues.isNotEmpty()) {
-                    Text(
-                        text = "Критические проблемы:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    criticalIssues.forEach { issue ->
-                        Text(
-                            text = "• ${issue.recommendation}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                // Предупреждения
-                if (warnings.isNotEmpty()) {
-                    Text(
-                        text = "Рекомендации:",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    warnings.forEach { issue ->
-                        Text(
-                            text = "• ${issue.recommendation}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
+                    TagItem(issue = issue)
                 }
             }
 
@@ -251,13 +189,13 @@ private fun MessageAssistantPreview() {
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
                             probability = 0.85f,
                             severity = IssueSeverity.CRITICAL,
-                            recommendation = "Добавьте конкретные цифры и метрики"
+                            recommendation = "Добавьте конкретные цифры и метрики: например, 'увеличил продажи на 30%', 'оптимизировал загрузку страницы с 3 до 1 секунды'."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
                             probability = 0.72f,
                             severity = IssueSeverity.CRITICAL,
-                            recommendation = "Укажите используемые технологии"
+                            recommendation = "Укажите используемые технологии и инструменты с указанием уровня владения."
                         )
                     ),
                     warnings = listOf(
@@ -265,7 +203,7 @@ private fun MessageAssistantPreview() {
                             tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
                             probability = 0.45f,
                             severity = IssueSeverity.WARNING,
-                            recommendation = "Добавьте больше информации о достижениях"
+                            recommendation = "Добавьте больше информации о достижениях и конкретных результатах."
                         )
                     ),
                     allTags = listOf(
@@ -273,25 +211,25 @@ private fun MessageAssistantPreview() {
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
                             probability = 0.85f,
                             severity = IssueSeverity.CRITICAL,
-                            recommendation = "Добавьте конкретные цифры и метрики"
+                            recommendation = "Добавьте конкретные цифры и метрики: например, 'увеличил продажи на 30%', 'оптимизировал загрузку страницы с 3 до 1 секунды'."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
                             probability = 0.72f,
                             severity = IssueSeverity.CRITICAL,
-                            recommendation = "Укажите используемые технологии"
+                            recommendation = "Укажите используемые технологии и инструменты с указанием уровня владения."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
                             probability = 0.45f,
                             severity = IssueSeverity.WARNING,
-                            recommendation = "Добавьте больше информации о достижениях"
+                            recommendation = "Добавьте больше информации о достижениях и конкретных результатах."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.BAD_STRUCTURE,
                             probability = 0.12f,
                             severity = IssueSeverity.OK,
-                            recommendation = "Структура в порядке"
+                            recommendation = "Структура резюме в порядке, можно оставить как есть."
                         )
                     )
                 )
@@ -302,8 +240,7 @@ private fun MessageAssistantPreview() {
                         conversationId = 1,
                         analysisResult = mockResultWithHighTags,
                         timestamp = System.currentTimeMillis()
-                    ),
-                    onTagInfoClick = { _, _ -> }
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -318,19 +255,19 @@ private fun MessageAssistantPreview() {
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
                             probability = 0.38f,
                             severity = IssueSeverity.OK,
-                            recommendation = "Можно добавить цифры"
+                            recommendation = "Можно добавить пару цифр для усиления эффекта."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
                             probability = 0.35f,
                             severity = IssueSeverity.OK,
-                            recommendation = "Добавьте деталей"
+                            recommendation = "Резюме хорошей длины, но можно добавить ещё одно достижение."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
                             probability = 0.32f,
                             severity = IssueSeverity.OK,
-                            recommendation = "Укажите стек"
+                            recommendation = "Стек технологий указан, но можно добавить уровень владения."
                         ),
                         AnalysisIssue(
                             tag = com.example.resume_net.domain.model.ResumeTag.BAD_STRUCTURE,
@@ -342,7 +279,7 @@ private fun MessageAssistantPreview() {
                             tag = com.example.resume_net.domain.model.ResumeTag.NO_ACHIEVEMENTS,
                             probability = 0.25f,
                             severity = IssueSeverity.OK,
-                            recommendation = "Достижения есть"
+                            recommendation = "Достижения есть, но можно их лучше выделить."
                         )
                     )
                 )
@@ -353,8 +290,7 @@ private fun MessageAssistantPreview() {
                         conversationId = 1,
                         analysisResult = mockResultWithLowTags,
                         timestamp = System.currentTimeMillis()
-                    ),
-                    onTagInfoClick = { _, _ -> }
+                    )
                 )
             }
         }

@@ -11,24 +11,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryDark,
     onPrimary = OnPrimaryDark,
     primaryContainer = PrimaryContainerDark,
     onPrimaryContainer = OnPrimaryContainerDark,
-
     secondary = SecondaryDark,
     onSecondary = OnSecondaryDark,
-
     background = BackgroundDark,
     onBackground = OnBackgroundDark,
-
     surface = SurfaceDark,
     onSurface = OnSurfaceDark,
-
     surfaceVariant = SurfaceDark,
     onSurfaceVariant = OnSurfaceDark,
-
     error = ErrorDark,
     onError = OnErrorDark,
     errorContainer = ErrorContainerDark,
@@ -40,24 +36,20 @@ private val LightColorScheme = lightColorScheme(
     onPrimary = OnPrimaryLight,
     primaryContainer = PrimaryContainerLight,
     onPrimaryContainer = OnPrimaryContainerLight,
-
     secondary = SecondaryLight,
     onSecondary = OnSecondaryLight,
-
     background = BackgroundLight,
     onBackground = OnBackgroundLight,
-
     surface = SurfaceLight,
     onSurface = OnSurfaceLight,
-
     surfaceVariant = SurfaceVariantLight,
     onSurfaceVariant = OnSurfaceLight,
-
     error = ErrorLight,
     onError = OnErrorLight,
     errorContainer = ErrorContainerLight,
     onErrorContainer = OnErrorContainerLight
 )
+
 
 @Composable
 fun Resume_netTheme(
@@ -81,7 +73,7 @@ fun Resume_netTheme(
     )
 }
 
-// Extension properties для доступа к дополнительным цветам
+
 val androidx.compose.material3.ColorScheme.tagScoreHigh: Color
     @Composable
     get() = TagScoreHigh
