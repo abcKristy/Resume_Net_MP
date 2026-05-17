@@ -112,8 +112,7 @@ fun ChatScreen(
                 title = state.conversationTitle,
                 onNavigateBack = onNavigateBack,
                 onRename = { viewModel.onEvent(ChatEvent.ShowRenameDialog) },
-                onDelete = { viewModel.onEvent(ChatEvent.ShowDeleteConfirmation) },
-                onExport = { viewModel.onEvent(ChatEvent.ShowExportDialog) }
+                onDelete = { viewModel.onEvent(ChatEvent.ShowDeleteConfirmation) }
             )
         }
     ) { paddingValues ->

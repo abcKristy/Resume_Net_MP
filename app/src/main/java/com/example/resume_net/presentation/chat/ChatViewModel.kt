@@ -130,8 +130,6 @@ class ChatViewModel(
         }
     }
 
-    // ============= ОБРАБОТКА СОБЫТИЙ =============
-
     fun onEvent(event: ChatEvent) {
         when (event) {
             is ChatEvent.LoadConversation -> loadConversation(event.conversationId)

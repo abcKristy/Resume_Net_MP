@@ -3,6 +3,8 @@ package com.example.resume_net.presentation.conversations
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,15 +12,23 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.resume_net.R
 import com.example.resume_net.presentation.conversations.components.ConversationListItem
+import com.example.resume_net.ui.theme.OnBackgroundLight
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -73,88 +83,118 @@ fun ConversationsListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToNewAnalysis,
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Новый анализ"
-                )
+                Icon(Icons.Default.Add, "Новый анализ")
             }
-        },
-        topBar = {
-            SearchTopAppBar(
-                searchQuery = state.searchQuery,
-                isSearchActive = state.isSearchActive,
-                onSearchQueryChange = { query ->
-                    viewModel.onEvent(ConversationListEvent.UpdateSearchQuery(query))
-                },
-                onSearchActivate = { isActive ->
-                    viewModel.onEvent(ConversationListEvent.SetSearchActive(isActive))
-                },
-                onClearSearch = {
-                    viewModel.onEvent(ConversationListEvent.ClearSearch)
-                }
-            )
         }
     ) { paddingValues ->
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                state.isLoading && displayConversations.isEmpty() -> {
-                    // Загрузка
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
+        Box(modifier = Modifier.fillMaxSize()) {
 
-                displayConversations.isEmpty() -> {
-                    // Пустое состояние
-                    EmptyStateContent(
-                        hasSearchQuery = state.searchQuery.isNotBlank(),
-                        onClearSearch = {
-                            viewModel.onEvent(ConversationListEvent.ClearSearch)
-                        }
+            Image(
+                painter = painterResource(id = R.drawable.ic_app_clean),
+                contentDescription = "Иконка приложения",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-20).dp, y = 50.dp)
+                    .size(100.dp)
+            )
+
+            // Основной контент (поверх изображения)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Заголовок
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                ) {
+                    Text(
+                        text = "HireMind",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OnBackgroundLight
+                    )
+                    Text(
+                        text = "${state.conversations.size} ${getDeclension(state.conversations.size)}",
+                        fontSize = 14.sp,
+                        color = OnBackgroundLight.copy(alpha = 0.6f)
                     )
                 }
 
-                else -> {
-                    // Список диалогов
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(
-                            items = displayConversations,
-                            key = { it.id }
-                        ) { conversation ->
-                            ConversationListItem(
-                                conversation = conversation,
-                                onClick = {
-                                    viewModel.navigateToChat(conversation.id)
-                                },
-                                onRename = { newTitle ->
-                                    viewModel.onEvent(
-                                        ConversationListEvent.RenameConversation(
-                                            conversation.id,
-                                            newTitle
+                // Поиск
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = { query ->
+                        viewModel.onEvent(ConversationListEvent.UpdateSearchQuery(query))
+                    },
+                    placeholder = { Text("Поиск по названию...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White.copy(alpha = 0.9f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.7f),
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = Color.Transparent
+                    )
+                )
+
+                // Список или пустое состояние
+                when {
+                    state.isLoading && displayConversations.isEmpty() -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    displayConversations.isEmpty() -> {
+                        EmptyStateContent(
+                            hasSearchQuery = state.searchQuery.isNotBlank(),
+                            onClearSearch = {
+                                viewModel.onEvent(ConversationListEvent.ClearSearch)
+                            }
+                        )
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(
+                                items = displayConversations,
+                                key = { it.id }
+                            ) { conversation ->
+                                ConversationListItem(
+                                    conversation = conversation,
+                                    onClick = { viewModel.navigateToChat(conversation.id) },
+                                    onRename = { newTitle ->
+                                        viewModel.onEvent(
+                                            ConversationListEvent.RenameConversation(
+                                                conversation.id,
+                                                newTitle
+                                            )
                                         )
-                                    )
-                                },
-                                onDelete = {
-                                    viewModel.onEvent(
-                                        ConversationListEvent.DeleteConversation(conversation.id)
-                                    )
-                                }
-                            )
+                                    },
+                                    onDelete = {
+                                        viewModel.onEvent(
+                                            ConversationListEvent.DeleteConversation(conversation.id)
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -163,68 +203,14 @@ fun ConversationsListScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SearchTopAppBar(
-    searchQuery: String,
-    isSearchActive: Boolean,
-    onSearchQueryChange: (String) -> Unit,
-    onSearchActivate: (Boolean) -> Unit,
-    onClearSearch: () -> Unit
-) {
-    if (isSearchActive) {
-        // Режим поиска - используем TopAppBar с полем ввода
-        TopAppBar(
-            title = {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Поиск...") },
-                    modifier = Modifier.fillMaxWidth()
-                        .heightIn(min = 40.dp, max = 40.dp),
-                    singleLine = true,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = { onSearchActivate(false) }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Назад"
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
-    } else {
-        // Обычный режим - CenterAlignedTopAppBar
-        CenterAlignedTopAppBar(
-            title = {
-                Text(
-                    text = "Анализы резюме",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            actions = {
-                IconButton(onClick = { onSearchActivate(true) }) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Поиск"
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface
-            )
-        )
+/**
+ * Склонение слова "анализ" в зависимости от числа
+ */
+private fun getDeclension(count: Int): String {
+    return when {
+        count % 10 == 1 && count % 100 != 11 -> "анализ"
+        count % 10 in 2..4 && count % 100 !in 12..14 -> "анализа"
+        else -> "анализов"
     }
 }
 
@@ -244,18 +230,19 @@ private fun EmptyStateContent(
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            imageVector = if (hasSearchQuery) Icons.Default.Search else Icons.Default.Description,
+            imageVector = if (hasSearchQuery) Icons.Default.Search else Icons.Outlined.Receipt,
             contentDescription = null,
             modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            tint = OnBackgroundLight.copy(alpha = 0.3f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = if (hasSearchQuery) "Ничего не найдено" else "Нет анализов",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+            color = OnBackgroundLight.copy(alpha = 0.7f)
         )
 
         Spacer(modifier = Modifier.height(8.dp))

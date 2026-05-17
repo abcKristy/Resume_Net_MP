@@ -6,10 +6,11 @@ import androidx.compose.ui.graphics.Color
 val AccentLight = Color(0xFFB2CBE6)  // Светлый акцент (основной фон)
 val AccentDark = Color(0xFF42262A)   // Темный акцент (текст, акценты)
 
-val AssistantGradientStart = Color(0xFF98B7D9)
-val AssistantGradientEnd = Color(0xFF9FB5CE)
+val AssistantGradientStart = Color(0xFF85ABD5)
+val AssistantGradientEnd = Color(0xFF90ACCC)
+val ConversationBackground = Color(0xFFDEEBF8)
 
-val AssistantAvatarIcn = Color(0xFF738FAF)
+val AssistantAvatarIcn = Color(0xFFD1DFEE)
 
 // Light Theme цвета
 val PrimaryLight = AccentDark        // Темный как основной акцент
