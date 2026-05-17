@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Resume_net" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Статус бар с прозрачностью и эффектом размытия -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Навигация с прозрачностью -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Включить размытие под системными панелями -->
+        <item name="android:windowIsTranslucent">false</item>
+    </style>
+</resources>

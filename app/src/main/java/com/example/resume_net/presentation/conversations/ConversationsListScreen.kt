@@ -1,24 +1,47 @@
 package com.example.resume_net.presentation.conversations
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Receipt
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -91,26 +114,22 @@ fun ConversationsListScreen(
         }
     ) { paddingValues ->
 
-        Box(modifier = Modifier.fillMaxSize()) {
-
-            Image(
-                painter = painterResource(id = R.drawable.ic_app_clean),
-                contentDescription = "Иконка приложения",
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Заголовок + изображение в одной строке
+            Row(
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-20).dp, y = 50.dp)
-                    .size(100.dp)
-            )
-
-            // Основной контент (поверх изображения)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Заголовок
+                // Левая часть: заголовок и счётчик
                 Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = "HireMind",
@@ -125,76 +144,86 @@ fun ConversationsListScreen(
                     )
                 }
 
-                // Поиск
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = { query ->
-                        viewModel.onEvent(ConversationListEvent.UpdateSearchQuery(query))
-                    },
-                    placeholder = { Text("Поиск по названию...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                // Правая часть: изображение
+                Image(
+                    painter = painterResource(id = R.drawable.ic_app_clean),
+                    contentDescription = "Логотип",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White.copy(alpha = 0.9f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.7f),
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = Color.Transparent
-                    )
+                        .offset(x = 10.dp, y = (-10).dp)
+                        .size(120.dp)
+                        .alpha(0.9f)
                 )
+            }
 
-                // Список или пустое состояние
-                when {
-                    state.isLoading && displayConversations.isEmpty() -> {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
+            // Поиск
+            OutlinedTextField(
+                value = state.searchQuery,
+                onValueChange = { query ->
+                    viewModel.onEvent(ConversationListEvent.UpdateSearchQuery(query))
+                },
+                placeholder = { Text("Поиск по названию...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White.copy(alpha = 0.9f),
+                    unfocusedContainerColor = Color.White.copy(alpha = 0.7f),
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = Color.Transparent
+                )
+            )
+
+            // Список или пустое состояние
+            when {
+                state.isLoading && displayConversations.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                displayConversations.isEmpty() -> {
+                    EmptyStateContent(
+                        hasSearchQuery = state.searchQuery.isNotBlank(),
+                        onClearSearch = {
+                            viewModel.onEvent(ConversationListEvent.ClearSearch)
                         }
-                    }
+                    )
+                }
 
-                    displayConversations.isEmpty() -> {
-                        EmptyStateContent(
-                            hasSearchQuery = state.searchQuery.isNotBlank(),
-                            onClearSearch = {
-                                viewModel.onEvent(ConversationListEvent.ClearSearch)
-                            }
-                        )
-                    }
-
-                    else -> {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(
-                                items = displayConversations,
-                                key = { it.id }
-                            ) { conversation ->
-                                ConversationListItem(
-                                    conversation = conversation,
-                                    onClick = { viewModel.navigateToChat(conversation.id) },
-                                    onRename = { newTitle ->
-                                        viewModel.onEvent(
-                                            ConversationListEvent.RenameConversation(
-                                                conversation.id,
-                                                newTitle
-                                            )
+                else -> {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(
+                            items = displayConversations,
+                            key = { it.id }
+                        ) { conversation ->
+                            ConversationListItem(
+                                conversation = conversation,
+                                onClick = { viewModel.navigateToChat(conversation.id) },
+                                onRename = { newTitle ->
+                                    viewModel.onEvent(
+                                        ConversationListEvent.RenameConversation(
+                                            conversation.id,
+                                            newTitle
                                         )
-                                    },
-                                    onDelete = {
-                                        viewModel.onEvent(
-                                            ConversationListEvent.DeleteConversation(conversation.id)
-                                        )
-                                    }
-                                )
-                            }
+                                    )
+                                },
+                                onDelete = {
+                                    viewModel.onEvent(
+                                        ConversationListEvent.DeleteConversation(conversation.id)
+                                    )
+                                }
+                            )
                         }
                     }
                 }
