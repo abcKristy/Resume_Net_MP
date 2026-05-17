@@ -61,17 +61,17 @@ val TagScoreLow = Color(0xFF2E7D32)    // Зеленый 0-30% (темнее д�
 val AssistantAvatarGradientStart = Color(0xFF42262A)   // AccentDark
 val AssistantAvatarGradientEnd = Color(0xFF5D3A40)     // чуть светлее AccentDark
 
-val ScoreHighGradientStart = Color(0xFF66BB6A)   // мягкий зелёный
-val ScoreHighGradientEnd = Color(0xFF2E7D32)     // тёмно-зелёный
-
-val ScoreMediumGradientStart = Color(0xFFFFB74D) // мягкий оранжевый
-val ScoreMediumGradientEnd = Color(0xFFFF8F00)   // тёмно-оранжевый
-
-val ScoreLowGradientStart = Color(0xFFEF5350)    // мягкий красный
-val ScoreLowGradientEnd = Color(0xFFD32F2F)      // тёмно-красный
-
 val TagHighColor = Color(0xFFE57373)    // мягкий красный для прогресс-бара
 val TagMediumColor = Color(0xFFFFB74D)  // мягкий оранжевый
 val TagLowColor = Color(0xFF81C784)     // мягкий зелёный
 
 val InputFieldBackground = Color(0xFFF5F5F5)  // светлый фон для поля ввода
+
+val ScoreHighGradientStartSoft = TagLowColor        // мягкий зелёный #81C784
+val ScoreHighGradientEndSoft = TagLowColor.copy(alpha = 0.8f)
+
+val ScoreMediumGradientStartSoft = TagMediumColor   // мягкий оранжевый #FFB74D
+val ScoreMediumGradientEndSoft = TagMediumColor.copy(alpha = 0.8f)
+
+val ScoreLowGradientStartSoft = TagHighColor        // мягкий красный #E57373
+val ScoreLowGradientEndSoft = TagHighColor.copy(alpha = 0.8f)

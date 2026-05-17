@@ -68,7 +68,6 @@ fun TagItem(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)
         ),
@@ -78,7 +77,7 @@ fun TagItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { isExpanded = !isExpanded }
-                .padding(12.dp)
+                .padding(vertical = 4.dp, horizontal = 12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

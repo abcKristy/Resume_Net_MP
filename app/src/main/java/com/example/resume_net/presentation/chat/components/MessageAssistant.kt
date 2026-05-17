@@ -118,7 +118,6 @@ fun MessageAssistant(
             // Список тегов
             relevantTags.forEach { issue ->
                 TagItem(issue = issue)
-                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }

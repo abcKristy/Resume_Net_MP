@@ -15,12 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.resume_net.ui.theme.scoreHighGradientEnd
-import com.example.resume_net.ui.theme.scoreHighGradientStart
-import com.example.resume_net.ui.theme.scoreLowGradientEnd
-import com.example.resume_net.ui.theme.scoreLowGradientStart
-import com.example.resume_net.ui.theme.scoreMediumGradientEnd
-import com.example.resume_net.ui.theme.scoreMediumGradientStart
+import com.example.resume_net.ui.theme.ScoreHighGradientEndSoft
+import com.example.resume_net.ui.theme.ScoreHighGradientStartSoft
+import com.example.resume_net.ui.theme.ScoreLowGradientEndSoft
+import com.example.resume_net.ui.theme.ScoreLowGradientStartSoft
+import com.example.resume_net.ui.theme.ScoreMediumGradientEndSoft
+import com.example.resume_net.ui.theme.ScoreMediumGradientStartSoft
 
 @Composable
 fun ScoreChip(
@@ -28,9 +28,9 @@ fun ScoreChip(
     modifier: Modifier = Modifier
 ) {
     val (startColor, endColor) = when {
-        score >= 4.0f -> MaterialTheme.colorScheme.scoreHighGradientStart to MaterialTheme.colorScheme.scoreHighGradientEnd
-        score >= 3.0f -> MaterialTheme.colorScheme.scoreMediumGradientStart to MaterialTheme.colorScheme.scoreMediumGradientEnd
-        else -> MaterialTheme.colorScheme.scoreLowGradientStart to MaterialTheme.colorScheme.scoreLowGradientEnd
+        score >= 4.0f -> ScoreHighGradientStartSoft to ScoreHighGradientEndSoft
+        score >= 3.0f -> ScoreMediumGradientStartSoft to ScoreMediumGradientEndSoft
+        else -> ScoreLowGradientStartSoft to ScoreLowGradientEndSoft
     }
 
     Surface(

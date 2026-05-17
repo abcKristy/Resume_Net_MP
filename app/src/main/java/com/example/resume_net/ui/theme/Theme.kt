@@ -98,30 +98,6 @@ val androidx.compose.material3.ColorScheme.tagLow: Color
     @Composable
     get() = TagLowColor
 
-val androidx.compose.material3.ColorScheme.scoreHighGradientStart: Color
-    @Composable
-    get() = ScoreHighGradientStart
-
-val androidx.compose.material3.ColorScheme.scoreHighGradientEnd: Color
-    @Composable
-    get() = ScoreHighGradientEnd
-
-val androidx.compose.material3.ColorScheme.scoreMediumGradientStart: Color
-    @Composable
-    get() = ScoreMediumGradientStart
-
-val androidx.compose.material3.ColorScheme.scoreMediumGradientEnd: Color
-    @Composable
-    get() = ScoreMediumGradientEnd
-
-val androidx.compose.material3.ColorScheme.scoreLowGradientStart: Color
-    @Composable
-    get() = ScoreLowGradientStart
-
-val androidx.compose.material3.ColorScheme.scoreLowGradientEnd: Color
-    @Composable
-    get() = ScoreLowGradientEnd
-
 val androidx.compose.material3.ColorScheme.assistantAvatarStart: Color
     @Composable
     get() = AssistantAvatarGradientStart
