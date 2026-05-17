@@ -20,6 +20,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.resume_net.domain.model.Conversation
 import com.example.resume_net.ui.theme.Resume_netTheme
+import com.example.resume_net.ui.theme.TagHighColor
+import com.example.resume_net.ui.theme.TagLowColor
+import com.example.resume_net.ui.theme.TagMediumColor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -76,16 +79,46 @@ fun ConversationListItem(
                     modifier = Modifier.weight(1f)
                 )
 
-                IconButton(
-                    onClick = { showMenu = true },
-                    modifier = Modifier.size(32.dp)
+                // ✅ Бокс для правильного позиционирования DropdownMenu
+                Box(
+                    modifier = Modifier.wrapContentSize(Alignment.TopEnd)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Действия",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Действия",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .clip(RoundedCornerShape(8.dp))
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Переименовать") },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            onClick = {
+                                showMenu = false
+                                showRenameDialog = true
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Удалить") },
+                            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            onClick = {
+                                showMenu = false
+                                onDelete()
+                            }
+                        )
+                    }
                 }
             }
 
@@ -111,29 +144,6 @@ fun ConversationListItem(
                 )
             }
         }
-    }
-
-    // PopupMenu
-    DropdownMenu(
-        expanded = showMenu,
-        onDismissRequest = { showMenu = false }
-    ) {
-        DropdownMenuItem(
-            text = { Text("Переименовать") },
-            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
-            onClick = {
-                showMenu = false
-                showRenameDialog = true
-            }
-        )
-        DropdownMenuItem(
-            text = { Text("Удалить") },
-            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
-            onClick = {
-                showMenu = false
-                onDelete()
-            }
-        )
     }
 
     // Диалог переименования
@@ -174,9 +184,9 @@ fun ConversationListItem(
 private fun getColorByScore(score: Float?): Color {
     return when {
         score == null -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        score >= 4.0f -> Color(0xFF81C784)
-        score >= 3.0f -> Color(0xFFFFD54F)
-        else -> Color(0xFFE57373)
+        score >= 4.0f -> TagLowColor
+        score >= 3.0f -> TagMediumColor
+        else -> TagHighColor
     }
 }
 
