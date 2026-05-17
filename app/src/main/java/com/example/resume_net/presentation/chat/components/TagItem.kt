@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,6 +29,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.resume_net.domain.model.AnalysisIssue
+import com.example.resume_net.ui.theme.AccentLight
 import com.example.resume_net.ui.theme.tagHigh
 import com.example.resume_net.ui.theme.tagLow
 import com.example.resume_net.ui.theme.tagMedium
@@ -67,7 +70,7 @@ fun TagItem(
             .animateContentSize(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -77,7 +80,6 @@ fun TagItem(
                 .clickable { isExpanded = !isExpanded }
                 .padding(12.dp)
         ) {
-            // Верхняя строка
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -90,23 +92,12 @@ fun TagItem(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "${(progress * 100).toInt()}%",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = barColor
-                    )
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -160,36 +151,41 @@ fun TagItem(
 @Composable
 private fun TagItemPreview() {
     com.example.resume_net.ui.theme.Resume_netTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = AccentLight
         ) {
-            // Тег с вероятностью 80% (критический) - развернут по умолчанию для превью
-            val mockIssueCritical = AnalysisIssue(
-                tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
-                probability = 0.8f,
-                severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
-                recommendation = "Добавьте в резюме конкретные цифры и метрики: например, 'увеличил продажи на 30%', 'оптимизировал загрузку страницы с 3 до 1 секунды'."
-            )
-            TagItem(issue = mockIssueCritical)
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Тег с вероятностью 80% (критический)
+                val mockIssueCritical = AnalysisIssue(
+                    tag = com.example.resume_net.domain.model.ResumeTag.NO_NUMBERS,
+                    probability = 0.8f,
+                    severity = com.example.resume_net.domain.model.IssueSeverity.CRITICAL,
+                    recommendation = "Добавьте в резюме конкретные цифры и метрики: например, 'увеличил продажи на 30%', 'оптимизировал загрузку страницы с 3 до 1 секунды'."
+                )
+                TagItem(issue = mockIssueCritical)
 
-            // Тег с вероятностью 50% (предупреждение)
-            val mockIssueWarning = AnalysisIssue(
-                tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
-                probability = 0.5f,
-                severity = com.example.resume_net.domain.model.IssueSeverity.WARNING,
-                recommendation = "Укажите используемые технологии и инструменты с указанием уровня владения."
-            )
-            TagItem(issue = mockIssueWarning)
+                // Тег с вероятностью 50% (предупреждение)
+                val mockIssueWarning = AnalysisIssue(
+                    tag = com.example.resume_net.domain.model.ResumeTag.NO_SKILLS,
+                    probability = 0.5f,
+                    severity = com.example.resume_net.domain.model.IssueSeverity.WARNING,
+                    recommendation = "Укажите используемые технологии и инструменты с указанием уровня владения."
+                )
+                TagItem(issue = mockIssueWarning)
 
-            // Тег с вероятностью 25% (OK)
-            val mockIssueOk = AnalysisIssue(
-                tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
-                probability = 0.25f,
-                severity = com.example.resume_net.domain.model.IssueSeverity.OK,
-                recommendation = "Резюме хорошей длины, можете добавить ещё пару достижений."
-            )
-            TagItem(issue = mockIssueOk)
+                // Тег с вероятностью 25% (OK)
+                val mockIssueOk = AnalysisIssue(
+                    tag = com.example.resume_net.domain.model.ResumeTag.TOO_SHORT,
+                    probability = 0.25f,
+                    severity = com.example.resume_net.domain.model.IssueSeverity.OK,
+                    recommendation = "Резюме хорошей длины, можете добавить ещё пару достижений."
+                )
+                TagItem(issue = mockIssueOk)
+            }
         }
     }
 }

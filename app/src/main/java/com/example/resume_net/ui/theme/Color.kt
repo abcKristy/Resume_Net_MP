@@ -6,6 +6,11 @@ import androidx.compose.ui.graphics.Color
 val AccentLight = Color(0xFFB2CBE6)  // Светлый акцент (основной фон)
 val AccentDark = Color(0xFF42262A)   // Темный акцент (текст, акценты)
 
+val AssistantGradientStart = Color(0xFF98B7D9)
+val AssistantGradientEnd = Color(0xFF9FB5CE)
+
+val AssistantAvatarIcn = Color(0xFF738FAF)
+
 // Light Theme цвета
 val PrimaryLight = AccentDark        // Темный как основной акцент
 val OnPrimaryLight = AccentLight     // Светлый текст на темном фоне
@@ -46,9 +51,6 @@ val ErrorDark = Color(0xFFEF5350)
 val OnErrorDark = Color(0xFFB71C1C)
 val ErrorContainerDark = Color(0xFF4A0000)
 val OnErrorContainerDark = Color(0xFFFFCDD2)
-
-val SuccessDark = Color(0xFF66BB6A)
-val WarningDark = Color(0xFFFFD54F)
 
 // Цвета для прогресс-баров тегов
 val TagScoreHigh = Color(0xFFD32F2F)   // Красный 60-100% (ярче)
